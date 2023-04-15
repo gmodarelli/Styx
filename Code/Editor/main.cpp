@@ -19,7 +19,20 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Core/Window.h>
+
+using namespace Styx;
+
 int main()
 {
+	Window::Initialize();
+
+	while (!Window::ShouldClose())
+	{
+		Window::Tick();
+	}
+
+	Window::Shutdown();
+
 	return 0;
 }

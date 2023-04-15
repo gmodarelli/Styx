@@ -19,5 +19,17 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <assert.h>
-#include <stdio.h>
+#pragma once
+
+namespace Styx
+{
+	class Window
+	{
+	public:
+		static void Initialize();
+		static void Shutdown();
+		static void Tick();
+
+		static bool ShouldClose();
+	};
+}
