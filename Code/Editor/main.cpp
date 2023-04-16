@@ -20,21 +20,48 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <Core/Window.h>
-#include <RHI/DX12.h>
+#include <RHI/D3D12Lite.h>
+
+#include <memory>
 
 using namespace Styx;
 
 int main()
 {
 	Window::Initialize();
-	bool _ = RHI::DX12::Initialize(Window::GetSDLWindow());
+	D3D12Lite::Uint2 screenSize(Window::GetWidth(), Window::GetHeight());
+	std::unique_ptr<D3D12Lite::Device> device = std::make_unique<D3D12Lite::Device>(Window::GetWindowHandle(), screenSize);
+	std::unique_ptr<D3D12Lite::GraphicsContext> graphicsContext = device->CreateGraphicsContext();
 
 	while (!Window::ShouldClose())
 	{
 		Window::Tick();
+
+		device->BeginFrame();
+
+		D3D12Lite::TextureResource& backBuffer = device->GetCurrentBackBuffer();
+
+		graphicsContext->Reset();
+
+		graphicsContext->AddBarrier(backBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		graphicsContext->FlushBarriers();
+
+		float color[4] = {0.3f, 0.3f, 0.8f, 1.0f};
+		graphicsContext->ClearRenderTarget(backBuffer, color);
+
+		graphicsContext->AddBarrier(backBuffer, D3D12_RESOURCE_STATE_PRESENT);
+		graphicsContext->FlushBarriers();
+
+		device->SubmitContextWork(*graphicsContext);
+
+		device->EndFrame();
+		device->Present();
 	}
 
-	RHI::DX12::Teardown();
+	device->WaitForIdle();
+	device->DestroyContext(std::move(graphicsContext));
+	device = nullptr;
+
 	Window::Shutdown();
 
 	return 0;

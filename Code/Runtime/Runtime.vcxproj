@@ -57,15 +57,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -73,7 +73,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)Binaries</AdditionalLibraryDirectories>
@@ -88,7 +88,7 @@
       </SDLCheck>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -96,7 +96,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -106,24 +106,24 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)Binaries</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Core\pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.cpp" />
     <ClCompile Include="Core\Window.cpp" />
-    <ClCompile Include="RHI\DX12.cpp" />
+    <ClCompile Include="RHI\D3D12Lite.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\pch.h" />
+    <ClInclude Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\include\D3D12MemAlloc.h" />
     <ClInclude Include="Core\Window.h" />
-    <ClInclude Include="RHI\DX12.h" />
+    <ClInclude Include="RHI\D3D12Lite.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

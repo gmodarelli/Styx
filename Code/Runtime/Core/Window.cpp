@@ -19,10 +19,13 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "pch.h"
 #include "Window.h"
 
 #include <SDL.h>
+#include <SDL_syswm.h>
+
+#include <cassert>
+#include <stdio.h>
 
 namespace Styx
 {
@@ -133,8 +136,29 @@ namespace Styx
 		return g_close;
 	}
 
-	void* Window::GetSDLWindow()
+	void* Window::GetWindowHandle()
 	{
-		return g_window;
+		SDL_SysWMinfo info;
+		SDL_VERSION(&info.version);
+		SDL_GetWindowWMInfo(g_window, &info);
+		return (void*)info.info.win.window;
+	}
+
+	uint32_t Window::GetWidth()
+	{
+		int32_t width;
+		int32_t height;
+		SDL_GetWindowSize(g_window, &width, &height);
+
+		return (uint32_t)width;
+	}
+
+	uint32_t Window::GetHeight()
+	{
+		int32_t width;
+		int32_t height;
+		SDL_GetWindowSize(g_window, &width, &height);
+
+		return (uint32_t)height;
 	}
 }

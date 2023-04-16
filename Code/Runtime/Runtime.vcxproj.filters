@@ -12,25 +12,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Core\pch.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Window.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="RHI\DX12.cpp">
+    <ClCompile Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.cpp">
+      <Filter>RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\D3D12Lite.cpp">
       <Filter>RHI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\pch.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Window.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="RHI\DX12.h">
+    <ClInclude Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\include\D3D12MemAlloc.h">
       <Filter>RHI</Filter>
     </ClInclude>
+    <ClInclude Include="RHI\D3D12Lite.h">
+      <Filter>RHI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.natvis">
+      <Filter>RHI</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

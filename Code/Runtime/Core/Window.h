@@ -21,6 +21,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include <cstdint>
+
 namespace Styx
 {
 	class Window
@@ -32,6 +34,8 @@ namespace Styx
 
 		static bool ShouldClose();
 
-		static void* GetSDLWindow();
+		static void* GetWindowHandle();
+		static uint32_t GetWidth();
+		static uint32_t GetHeight();
 	};
 }
