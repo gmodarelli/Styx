@@ -29,8 +29,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace Styx
 {
-	SDL_Window* g_window = nullptr;
-	bool g_close = false;
+	SDL_Window* mWindow = nullptr;
+	uint32_t mWidth = 1920;
+	uint32_t mHeight = 1080;
+	bool mClose = false;
+	bool mShown = false;
+	bool mMinimized = false;
+	bool mMaximized = false;
 
 	void Window::Initialize()
 	{
@@ -69,7 +74,7 @@ namespace Styx
 		}
 
 		printf("[Core::Window] Found %d displays\n", num_displays);
-		SDL_Rect display_rect(0, 0, 1920, 1080);
+		SDL_Rect display_rect(0, 0, mWidth, mHeight);
 
 		for (int32_t i = 0; i < num_displays; i++)
 		{
@@ -91,9 +96,9 @@ namespace Styx
 		window_flags |= SDL_WINDOW_RESIZABLE;
 		window_flags |= SDL_WINDOW_MAXIMIZED;
 		window_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
-		g_window = SDL_CreateWindow("Styx", display_rect.x, display_rect.y, display_rect.w, display_rect.h, window_flags);
+		mWindow = SDL_CreateWindow("Styx", display_rect.x, display_rect.y, display_rect.w, display_rect.h, window_flags);
 
-		if (g_window == nullptr)
+		if (mWindow == nullptr)
 		{
 			const char* error = SDL_GetError();
 			printf("[Core::Window] Failed to create a window: '%s'\n", error);
@@ -101,64 +106,85 @@ namespace Styx
 			SDL_Quit();
 			return;
 		}
+
+		int32_t newWidth = 0;
+		int32_t newHeight = 0;
+		SDL_GetWindowSize(mWindow, &newWidth, &newHeight);
+		mWidth = (uint32_t)newWidth;
+		mHeight = (uint32_t)newHeight;
 	}
 
 	void Window::Shutdown()
 	{
-		SDL_DestroyWindow(g_window);
-		g_window = nullptr;
+		SDL_DestroyWindow(mWindow);
+		mWindow = nullptr;
 
 		SDL_Quit();
 	}
 
 	void Window::Tick()
 	{
-		SDL_Event sdl_event;
-		while (SDL_PollEvent(&sdl_event))
+		SDL_Event sdlEvent;
+		while (SDL_PollEvent(&sdlEvent))
 		{
-			if (sdl_event.type == SDL_WINDOWEVENT)
+			if (sdlEvent.type == SDL_WINDOWEVENT)
 			{
-				if (sdl_event.window.windowID == SDL_GetWindowID(g_window))
+				if (sdlEvent.window.windowID == SDL_GetWindowID(mWindow))
 				{
-					switch (sdl_event.window.event)
+					switch (sdlEvent.window.event)
 					{
 					case SDL_WINDOWEVENT_CLOSE:
-						g_close = true;
+						mClose = true;
 						break;
+
+                    case SDL_WINDOWEVENT_RESIZED:
+                        mWidth = static_cast<uint32_t>(sdlEvent.window.data1);
+                        mHeight = static_cast<uint32_t>(sdlEvent.window.data2);
+                        break;
+                    case SDL_WINDOWEVENT_SIZE_CHANGED:
+                        mWidth = static_cast<uint32_t>(sdlEvent.window.data1);
+                        mHeight = static_cast<uint32_t>(sdlEvent.window.data2);
+                        break;
+                    case SDL_WINDOWEVENT_MINIMIZED:
+                        mMinimized = true;
+                        mMaximized = false;
+                        break;
+                    case SDL_WINDOWEVENT_MAXIMIZED:
+                        mMaximized = true;
+                        mMinimized = false;
+                        break;
 					}
 				}
 			}
 		}
 	}
 
-	bool Window::ShouldClose()
-	{
-		return g_close;
-	}
-
 	void* Window::GetWindowHandle()
 	{
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
-		SDL_GetWindowWMInfo(g_window, &info);
+		SDL_GetWindowWMInfo(mWindow, &info);
 		return (void*)info.info.win.window;
 	}
 
 	uint32_t Window::GetWidth()
 	{
-		int32_t width;
-		int32_t height;
-		SDL_GetWindowSize(g_window, &width, &height);
-
-		return (uint32_t)width;
+		return mWidth;
 	}
 
 	uint32_t Window::GetHeight()
 	{
-		int32_t width;
-		int32_t height;
-		SDL_GetWindowSize(g_window, &width, &height);
-
-		return (uint32_t)height;
+		return mHeight;
 	}
+
+	bool Window::ShouldClose()
+	{
+		return mClose;
+	}
+
+	bool Window::IsMinimized()
+	{
+		return mMinimized;
+	}
+
 }

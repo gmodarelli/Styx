@@ -32,10 +32,12 @@ namespace Styx
 		static void Shutdown();
 		static void Tick();
 
-		static bool ShouldClose();
-
 		static void* GetWindowHandle();
 		static uint32_t GetWidth();
 		static uint32_t GetHeight();
+
+		static bool ShouldClose();
+		static bool IsMinimized();
+
 	};
 }

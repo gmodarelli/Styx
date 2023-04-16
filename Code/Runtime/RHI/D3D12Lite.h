@@ -1,3 +1,4 @@
+// D3D12Light by Alex Tardif
 #pragma once
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -626,6 +627,7 @@ namespace D3D12Lite
         void BeginFrame();
         void EndFrame();
         void Present();
+		bool ResizeSwapchain(void* windowHandle, Uint2 screenSize);
 
         ID3D12Device5* GetDevice() { return mDevice; }
         RenderPassDescriptorHeap& GetSamplerHeap() { return *mSamplerRenderPassDescriptorHeap; }

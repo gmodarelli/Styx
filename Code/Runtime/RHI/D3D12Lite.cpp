@@ -1,3 +1,4 @@
+// D3D12Light by Alex Tardif
 #include "D3D12Lite.h"
 
 #include <D3D12MemAlloc.h>
@@ -938,9 +939,9 @@ namespace D3D12Lite
     Device::Device(void* windowHandle, Uint2 screenSize)
     {
         InitializeDeviceResources();
-        CreateWindowDependentResources(windowHandle, screenSize);
-
-        mScreenSize = screenSize;
+        
+		CreateWindowDependentResources(windowHandle, screenSize);
+		mScreenSize = screenSize;
     }
 
     Device::~Device()
@@ -1162,8 +1163,22 @@ namespace D3D12Lite
         }
     }
 
+    bool Device::ResizeSwapchain(void* windowHandle, Uint2 screenSize)
+    {
+        if (mScreenSize.x != screenSize.x || mScreenSize.y != screenSize.y)
+        {
+			CreateWindowDependentResources(windowHandle, screenSize);
+			mScreenSize = screenSize;
+            return true;
+        }
+
+        return false;
+    }
+
     void Device::CreateWindowDependentResources(void* windowHandle, Uint2 screenSize)
     {
+		DestroyWindowDependentResources();
+
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
         ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
         swapChainDesc.Width = lround(screenSize.x);
@@ -1212,9 +1227,12 @@ namespace D3D12Lite
     {
         for (uint32_t bufferIndex = 0; bufferIndex < NUM_BACK_BUFFERS; bufferIndex++)
         {
-            mRTVStagingDescriptorHeap->FreeDescriptor(mBackBuffers[bufferIndex]->mRTVDescriptor);
-            SafeRelease(mBackBuffers[bufferIndex]->mResource);
-            mBackBuffers[bufferIndex] = nullptr;
+            if (mBackBuffers[bufferIndex])
+            {
+				mRTVStagingDescriptorHeap->FreeDescriptor(mBackBuffers[bufferIndex]->mRTVDescriptor);
+				SafeRelease(mBackBuffers[bufferIndex]->mResource);
+				mBackBuffers[bufferIndex] = nullptr;
+            }
         }
 
         SafeRelease(mSwapChain);
