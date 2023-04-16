@@ -65,7 +65,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -73,7 +73,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)Binaries</AdditionalLibraryDirectories>
@@ -96,7 +96,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -106,7 +106,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)Binaries</AdditionalLibraryDirectories>
@@ -118,10 +118,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Core\Window.cpp" />
+    <ClCompile Include="RHI\DX12.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\pch.h" />
     <ClInclude Include="Core\Window.h" />
+    <ClInclude Include="RHI\DX12.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

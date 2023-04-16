@@ -4,6 +4,12 @@
     <Filter Include="Core">
       <UniqueIdentifier>{561e3984-8f65-454f-a2e8-176278b4b9e6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{416521d8-d08e-4b4e-8f31-9c5a70eb251d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI">
+      <UniqueIdentifier>{24864dd5-689d-4ad6-8566-294ce9a7af82}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\pch.cpp">
@@ -12,6 +18,9 @@
     <ClCompile Include="Core\Window.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="RHI\DX12.cpp">
+      <Filter>RHI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\pch.h">
@@ -19,6 +28,9 @@
     </ClInclude>
     <ClInclude Include="Core\Window.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DX12.h">
+      <Filter>RHI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -21,3 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdint.h>
+
+#include <string>
+#include <system_error>

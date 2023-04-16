@@ -31,5 +31,7 @@ namespace Styx
 		static void Tick();
 
 		static bool ShouldClose();
+
+		static void* GetSDLWindow();
 	};
 }

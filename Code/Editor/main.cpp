@@ -20,18 +20,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <Core/Window.h>
+#include <RHI/DX12.h>
 
 using namespace Styx;
 
 int main()
 {
 	Window::Initialize();
+	bool _ = RHI::DX12::Initialize(Window::GetSDLWindow());
 
 	while (!Window::ShouldClose())
 	{
 		Window::Tick();
 	}
 
+	RHI::DX12::Teardown();
 	Window::Shutdown();
 
 	return 0;

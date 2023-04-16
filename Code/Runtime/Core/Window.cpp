@@ -132,4 +132,9 @@ namespace Styx
 	{
 		return g_close;
 	}
+
+	void* Window::GetSDLWindow()
+	{
+		return g_window;
+	}
 }
