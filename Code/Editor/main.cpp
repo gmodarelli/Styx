@@ -103,7 +103,6 @@ int main()
 
 	// Testing the assimp installation
 	loadScene("Assets/Models/NewSponza_Main_glTF_002.gltf");
-	// loadScene("Assets/Models/Cubes.fbx");
 
 	assert(g_positions.size() > 0);
 	assert(g_normals.size() > 0);
@@ -297,7 +296,19 @@ int main()
 
 	device->WaitForIdle();
 
-	// TODO(gmodarelli): Destroy all GPU resources
+	device->DestroyPipelineStateObject(std::move(g_meshPreviewPSO));
+	device->DestroyShader(std::move(g_vertexShader));
+	device->DestroyShader(std::move(g_pixelShader));
+	device->DestroyBuffer(std::move(g_positionBuffer));
+	device->DestroyBuffer(std::move(g_normalBuffer));
+	device->DestroyBuffer(std::move(g_indexBuffer));
+
+	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
+	{
+		device->DestroyBuffer(std::move(g_passConstantBuffers[i]));
+	}
+
+	device->DestroyTexture(std::move(g_depthBuffer));
 
 	device->DestroyContext(std::move(graphicsContext));
 	device = nullptr;
