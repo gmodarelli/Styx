@@ -57,7 +57,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_DEBUG_VALIDATIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -65,7 +65,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -96,7 +96,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>

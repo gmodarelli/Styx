@@ -51,8 +51,8 @@ namespace D3D12Lite
     constexpr uint32_t NUM_SRV_RENDER_PASS_USER_DESCRIPTORS = 65536;
     constexpr uint32_t INVALID_RESOURCE_TABLE_INDEX = UINT_MAX;
     constexpr uint32_t MAX_TEXTURE_SUBRESOURCE_COUNT = 32;
-    static const wchar_t* SHADER_SOURCE_PATH = L"Shaders/";
-    static const wchar_t* SHADER_OUTPUT_PATH = L"Shaders/Compiled/";
+    static const wchar_t* SHADER_SOURCE_PATH = L"Assets/Shaders/";
+    static const wchar_t* SHADER_OUTPUT_PATH = L"Assets/Shaders/Compiled/";
     static const char* RESOURCE_PATH = "Resources/";
 
     using SubResourceLayouts = std::array<D3D12_PLACED_SUBRESOURCE_FOOTPRINT, MAX_TEXTURE_SUBRESOURCE_COUNT>;
@@ -192,6 +192,9 @@ namespace D3D12Lite
         BufferViewFlags mViewFlags = BufferViewFlags::none;
         BufferAccessFlags mAccessFlags = BufferAccessFlags::gpuOnly;
         bool mIsRawAccess = false;
+        // NOTE(gmodarelli): Changes to support index buffers and debug names for validation layers
+        DXGI_FORMAT mFormat = DXGI_FORMAT_UNKNOWN;
+        const wchar_t* mDebugName = nullptr;
     };
 
     struct TextureCreationDesc
@@ -305,6 +308,7 @@ namespace D3D12Lite
     struct PipelineResourceLayout
     {
         std::array<PipelineResourceSpace*, NUM_RESOURCE_SPACES> mSpaces{ nullptr };
+        uint32_t mNum32BitConstants = 0;
     };
 
     struct RenderTargetDesc
@@ -560,6 +564,8 @@ namespace D3D12Lite
         void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY topology);
         void SetPipeline(const PipelineInfo& pipelineBinding);
         void SetPipelineResources(uint32_t spaceId, const PipelineResourceSpace& resources);
+        void SetPipeline32BitConstant(uint32_t rootParameterIndex, uint32_t value, uint32_t offset);
+        void SetPipeline32BitConstants(uint32_t rootParameterIndex, uint32_t numValues, const void* data, uint32_t offset);
         void SetIndexBuffer(const BufferResource& indexBuffer);
         void ClearRenderTarget(const TextureResource& target, float* color);
         void ClearDepthStencilTarget(const TextureResource& target, float depth, uint8_t stencil);

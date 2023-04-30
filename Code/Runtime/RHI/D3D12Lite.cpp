@@ -656,6 +656,16 @@ namespace D3D12Lite
         }
     }
 
+    void GraphicsContext::SetPipeline32BitConstant(uint32_t rootParameterIndex, uint32_t value, uint32_t offset)
+    {
+        mCommandList->SetGraphicsRoot32BitConstant(rootParameterIndex, value, offset);
+    }
+
+    void GraphicsContext::SetPipeline32BitConstants(uint32_t rootParameterIndex, uint32_t numValues, const void* data, uint32_t offset)
+    {
+        mCommandList->SetGraphicsRoot32BitConstants(rootParameterIndex, numValues, data, offset);
+    }
+
     void GraphicsContext::SetTargets(uint32_t numRenderTargets, const D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[], D3D12_CPU_DESCRIPTOR_HANDLE depthStencil)
     {
         mCommandList->OMSetRenderTargets(numRenderTargets, renderTargets, false, depthStencil.ptr != 0 ? &depthStencil : nullptr);
@@ -663,6 +673,10 @@ namespace D3D12Lite
 
     void GraphicsContext::SetIndexBuffer(const BufferResource& indexBuffer)
     {
+        // NOTE(gmodarelli): Make sure we have a format
+        // TODO(gmodarelli): Add support for DXGI_FORMAT_R16_UINT
+        assert(indexBuffer.mDesc.Format == DXGI_FORMAT_R32_UINT);
+
         D3D12_INDEX_BUFFER_VIEW indexBufferView;
         indexBufferView.Format = indexBuffer.mDesc.Format;
         indexBufferView.SizeInBytes = static_cast<uint32_t>(indexBuffer.mDesc.Width);
@@ -1067,7 +1081,9 @@ namespace D3D12Lite
         CreateSamplers();
 
         BufferCreationDesc uploadBufferDesc;
-        uploadBufferDesc.mSize = 10 * 1024 * 1024;
+        // NOTE(gmodarelli): Temporarily increased this upload buffer to 50 MB
+        // uploadBufferDesc.mSize = 10 * 1024 * 1024;
+        uploadBufferDesc.mSize = 50 * 1024 * 1024;
         uploadBufferDesc.mAccessFlags = BufferAccessFlags::hostWritable;
 
         BufferCreationDesc uploadTextureDesc;
@@ -1452,6 +1468,17 @@ namespace D3D12Lite
         {
             newBuffer->mResource->Map(0, nullptr, reinterpret_cast<void**>(&newBuffer->mMappedResource));
         }
+
+        // NOTE(gmodarelli): Changes to add support for Index Buffers
+        newBuffer->mDesc.Format = desc.mFormat;
+
+        // NOTE(gmodarelli): Add a debug name if debug validations are on
+#if _DEBUG_VALIDATIONS
+        if (desc.mDebugName != nullptr)
+        {
+            newBuffer->mResource->SetName(desc.mDebugName);
+        }
+#endif
 
         return newBuffer;
     }
@@ -1880,6 +1907,17 @@ namespace D3D12Lite
                 resourceMapping.mTableMapping[spaceId] = static_cast<uint32_t>(rootParameters.size());
                 rootParameters.push_back(desciptorTableForSpace);
             }
+        }
+
+        if (layout.mNum32BitConstants > 0)
+        {
+            D3D12_ROOT_PARAMETER1 rootParameter{};
+            rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+            rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+            rootParameter.Constants.Num32BitValues = layout.mNum32BitConstants;
+            rootParameter.Constants.ShaderRegister = 1;
+            rootParameter.Constants.RegisterSpace = 0;
+            rootParameters.push_back(rootParameter);
         }
 
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
