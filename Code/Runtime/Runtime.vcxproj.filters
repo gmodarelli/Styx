@@ -10,6 +10,9 @@
     <Filter Include="RHI">
       <UniqueIdentifier>{24864dd5-689d-4ad6-8566-294ce9a7af82}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{2ffef3c3-2e49-497c-9c2a-3bda2a4a688e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Window.cpp">
@@ -32,10 +35,21 @@
     <ClInclude Include="RHI\D3D12Lite.h">
       <Filter>RHI</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Assets\Shaders\ShaderInterop.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.natvis">
       <Filter>RHI</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\Assets\Shaders\Common.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Assets\Shaders\MeshPreview.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

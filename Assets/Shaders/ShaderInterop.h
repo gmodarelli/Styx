@@ -1,0 +1,4 @@
+#ifndef _SHADER_INTEROP_H_
+#define _SHADER_INTEROP_H_
+
+#endif // _SHADER_INTEROP_H_
