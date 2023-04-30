@@ -404,6 +404,6 @@ FodyWeavers.xsd
 !/Binaries/SDL2test.lib
 !/Binaries/D3D12/
 !/Binaries/D3D12/D3D12Core.dll
-!/Binaries/D3D12/D3D12Core.pdb
 !/Binaries/D3D12/d3d12SDKLayers.dll
-!/Binaries/D3D12/d3d12SDKLayers.pdb
+!/Binaries/assimp-vc143-mt.dll
+!/Binaries/assimp-vc143-mtd.dll
