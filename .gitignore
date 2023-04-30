@@ -407,3 +407,7 @@ FodyWeavers.xsd
 !/Binaries/D3D12/d3d12SDKLayers.dll
 !/Binaries/assimp-vc143-mt.dll
 !/Binaries/assimp-vc143-mtd.dll
+/Assets/*
+!/Assets/Shaders/Compiled/.gitkeep
+!/Assets/Shaders/*.hlsl
+!/Assets/Shaders/*.h
