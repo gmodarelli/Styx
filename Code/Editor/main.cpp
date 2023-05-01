@@ -50,6 +50,7 @@ struct Transform
 
 std::vector<float> g_positions;
 std::vector<float> g_normals;
+std::vector<float> g_uvs;
 std::vector<uint32_t> g_indices;
 std::vector<Mesh> g_meshes;
 std::vector<Transform> g_transforms;
@@ -65,6 +66,7 @@ DXGI_FORMAT g_depthFormat = DXGI_FORMAT_D32_FLOAT;
 std::unique_ptr<D3D12Lite::TextureResource> g_depthBuffer;
 std::unique_ptr<D3D12Lite::BufferResource> g_positionBuffer;
 std::unique_ptr<D3D12Lite::BufferResource> g_normalBuffer;
+std::unique_ptr<D3D12Lite::BufferResource> g_uvBuffer;
 std::unique_ptr<D3D12Lite::BufferResource> g_indexBuffer;
 std::array<std::unique_ptr<D3D12Lite::BufferResource>, D3D12Lite::NUM_FRAMES_IN_FLIGHT> g_passConstantBuffers;
 D3D12Lite::PipelineResourceSpace g_perPassResourceSpace;
@@ -78,7 +80,33 @@ struct PassConstants
 	DirectX::XMFLOAT4X4 projectionMatrix;
 	uint32_t positionBufferIndex;
 	uint32_t normalBufferIndex;
+	uint32_t uvBufferIndex;
 };
+
+DirectX::XMVECTOR g_worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+DirectX::XMVECTOR g_worldRight = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+
+// Cameras
+struct Camera
+{
+	DirectX::XMVECTOR position;
+	DirectX::XMVECTOR target;
+	DirectX::XMVECTOR up;
+	DirectX::XMVECTOR forward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	DirectX::XMVECTOR right = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	DirectX::XMMATRIX transform;
+	DirectX::XMMATRIX view;
+	float yaw = 0.0f;
+	float pitch = 0.0f;
+};
+
+Camera g_freeFlyCamera;
+void updateFreeFlyCamera();
+
+// Input Axis Mapping
+float g_inputForwardAxis = 0.0f;
+float g_inputRightAxis = 0.0f;
+float g_inputUpAxis = 0.0f;
 
 // NOTE(gmodarelli): This is all temporary test code to test the current WIP implementation
 // of the RHI
@@ -106,6 +134,7 @@ int main()
 
 	assert(g_positions.size() > 0);
 	assert(g_normals.size() > 0);
+	assert(g_uvs.size() > 0);
 	assert(g_positions.size() == g_normals.size());
 	assert(g_indices.size() > 0);
 
@@ -152,6 +181,27 @@ int main()
 	}
 
 	{
+		uint32_t sizeInBytes = static_cast<uint32_t>(g_uvs.size() * sizeof(float));
+		D3D12Lite::BufferCreationDesc desc{};
+		desc.mSize = sizeInBytes;
+		desc.mAccessFlags = D3D12Lite::BufferAccessFlags::gpuOnly;
+		desc.mViewFlags = D3D12Lite::BufferViewFlags::srv;
+		desc.mStride = sizeof(float) * 2;
+		desc.mIsRawAccess = true;
+		desc.mDebugName = L"UV Buffer";
+
+		g_uvBuffer = device->CreateBuffer(desc);
+
+		std::unique_ptr<D3D12Lite::BufferUpload> uploadBuffer = std::make_unique<D3D12Lite::BufferUpload>();
+		uploadBuffer->mBuffer = g_uvBuffer.get();
+		uploadBuffer->mBufferData = std::make_unique<uint8_t[]>(sizeInBytes);
+		uploadBuffer->mBufferDataSize = sizeInBytes;
+
+		memcpy_s(uploadBuffer->mBufferData.get(), sizeInBytes, g_uvs.data(), sizeInBytes);
+		device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
+	}
+
+	{
 		uint32_t sizeInBytes = static_cast<uint32_t>(g_indices.size() * sizeof(uint32_t));
 		D3D12Lite::BufferCreationDesc desc{};
 		desc.mSize = sizeInBytes;
@@ -173,17 +223,7 @@ int main()
 		device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
 	}
 
-	// NOTE(gmodarelli): Temporarily faking a camera
-	DirectX::XMVECTOR cameraPosition = DirectX::XMVectorSet(0.0, 2.0, 0.0, 0.0);
-	DirectX::XMVECTOR cameraTarget = DirectX::XMVectorSet(-2.0, 2.0, 0.0, 0.0);
-	DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(cameraPosition, cameraTarget, DirectX::XMVectorSet(0.0, 1.0, 0.0, 0.0));
 	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.0f), screenSize.x / (float)screenSize.y, 0.01f, 100.0f);
-
-	PassConstants passConstants;
-	DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, viewMatrix);
-	DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, projectionMatrix);
-	passConstants.positionBufferIndex = g_positionBuffer->mDescriptorHeapIndex;
-	passConstants.normalBufferIndex = g_normalBuffer->mDescriptorHeapIndex;
 
 	D3D12Lite::BufferCreationDesc passConstantBufferDesc{};
 	passConstantBufferDesc.mSize = sizeof(PassConstants);
@@ -194,7 +234,6 @@ int main()
 	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
 	{
 		g_passConstantBuffers[i] = device->CreateBuffer(passConstantBufferDesc);
-		g_passConstantBuffers[i]->SetMappedData(&passConstants, sizeof(PassConstants));
 	}
 
 	// Mesh Preview PSO
@@ -244,6 +283,43 @@ int main()
 			}
 		}
 
+		// Update
+		{
+			// Camera input movememnt
+			// W
+			if (Window::GetKey(1))
+			{
+				g_inputForwardAxis += 5.0f * 0.001f;
+			}
+			// S
+			if (Window::GetKey(4))
+			{
+				g_inputForwardAxis -= 5.0f * 0.001f;
+			}
+			// A
+			if (Window::GetKey(3))
+			{
+				g_inputRightAxis -= 5.0f * 0.001f;
+			}
+			// D
+			if (Window::GetKey(5))
+			{
+				g_inputRightAxis += 5.0f * 0.001f;
+			}
+			// Q
+			if (Window::GetKey(0))
+			{
+				g_inputUpAxis += 5.0f * 0.001f;
+			}
+			// E
+			if (Window::GetKey(2))
+			{
+				g_inputUpAxis -= 5.0f * 0.001f;
+			}
+
+			updateFreeFlyCamera();
+		}
+
 		// Render
 		{
 			device->BeginFrame();
@@ -262,12 +338,19 @@ int main()
 
 			if (g_positionBuffer->mIsReady && g_normalBuffer->mIsReady && g_indexBuffer->mIsReady)
 			{
-				g_passConstantBuffers[device->GetFrameId()]->SetMappedData(&passConstants, sizeof(PassConstants));
-
 				D3D12Lite::PipelineInfo pso;
 				pso.mPipeline = g_meshPreviewPSO.get();
 				pso.mRenderTargets.push_back(&backBuffer);
 				pso.mDepthStencilTarget = g_depthBuffer.get();
+
+				PassConstants passConstants;
+				DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, g_freeFlyCamera.view);
+				DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, projectionMatrix);
+				passConstants.positionBufferIndex = g_positionBuffer->mDescriptorHeapIndex;
+				passConstants.normalBufferIndex = g_normalBuffer->mDescriptorHeapIndex;
+				passConstants.uvBufferIndex = g_uvBuffer->mDescriptorHeapIndex;
+
+				g_passConstantBuffers[device->GetFrameId()]->SetMappedData(&passConstants, sizeof(PassConstants));
 
 				graphicsContext->SetPipeline(pso);
 				graphicsContext->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, g_perPassResourceSpace);
@@ -301,6 +384,7 @@ int main()
 	device->DestroyShader(std::move(g_pixelShader));
 	device->DestroyBuffer(std::move(g_positionBuffer));
 	device->DestroyBuffer(std::move(g_normalBuffer));
+	device->DestroyBuffer(std::move(g_uvBuffer));
 	device->DestroyBuffer(std::move(g_indexBuffer));
 
 	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
@@ -357,6 +441,10 @@ void processNode(aiNode* node, const aiScene* scene)
 
 Mesh processMesh(aiMesh* mesh, const aiScene* scene)
 {
+	assert(mesh->HasPositions());
+	assert(mesh->HasNormals());
+	assert(mesh->HasTextureCoords(0));
+
 	Mesh outMesh;
 	outMesh.indexOffset = (uint32_t)g_indices.size();
 	outMesh.indexCount = 0;
@@ -369,18 +457,12 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene)
 		g_positions.push_back(mesh->mVertices[i].y);
 		g_positions.push_back(mesh->mVertices[i].z);
 
-		if (mesh->HasNormals())
-		{
-			g_normals.push_back(mesh->mNormals[i].x);
-			g_normals.push_back(mesh->mNormals[i].y);
-			g_normals.push_back(mesh->mNormals[i].z);
-		}
-		else
-		{
-			g_normals.push_back(0.0f);
-			g_normals.push_back(1.0f);
-			g_normals.push_back(0.0f);
-		}
+		g_normals.push_back(mesh->mNormals[i].x);
+		g_normals.push_back(mesh->mNormals[i].y);
+		g_normals.push_back(mesh->mNormals[i].z);
+
+		g_uvs.push_back(mesh->mTextureCoords[0][i].x);
+		g_uvs.push_back(mesh->mTextureCoords[0][i].y);
 	}
 
 	for (uint32_t i = 0; i < mesh->mNumFaces; i++)
@@ -395,4 +477,26 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene)
 	}
 
 	return outMesh;
+}
+
+void updateFreeFlyCamera()
+{
+	g_freeFlyCamera.transform = DirectX::XMMatrixRotationRollPitchYaw(g_freeFlyCamera.pitch, g_freeFlyCamera.yaw, 0);
+	g_freeFlyCamera.target = DirectX::XMVector3TransformCoord(g_worldForward, g_freeFlyCamera.transform);
+	g_freeFlyCamera.target = DirectX::XMVector3Normalize(g_freeFlyCamera.target);
+
+	g_freeFlyCamera.right = DirectX::XMVector3TransformCoord(g_worldRight, g_freeFlyCamera.transform);
+	g_freeFlyCamera.forward = DirectX::XMVector3TransformCoord(g_worldForward, g_freeFlyCamera.transform);
+	g_freeFlyCamera.up = DirectX::XMVector3Cross(g_freeFlyCamera.forward, g_freeFlyCamera.right);
+
+	g_freeFlyCamera.position = DirectX::XMVectorAdd(g_freeFlyCamera.position, DirectX::XMVectorMultiply(DirectX::XMVectorSet(g_inputRightAxis, g_inputRightAxis, g_inputRightAxis, 0.0f), g_freeFlyCamera.right));
+	g_freeFlyCamera.position = DirectX::XMVectorAdd(g_freeFlyCamera.position, DirectX::XMVectorMultiply(DirectX::XMVectorSet(g_inputForwardAxis, g_inputForwardAxis, g_inputForwardAxis, 0.0f), g_freeFlyCamera.forward));
+	g_freeFlyCamera.position = DirectX::XMVectorAdd(g_freeFlyCamera.position, DirectX::XMVectorMultiply(DirectX::XMVectorSet(g_inputUpAxis, g_inputUpAxis, g_inputUpAxis, 0.0f), g_freeFlyCamera.up));
+
+	g_inputForwardAxis = 0.0f;
+	g_inputRightAxis = 0.0f;
+	g_inputUpAxis = 0.0f;
+
+	g_freeFlyCamera.target = DirectX::XMVectorAdd(g_freeFlyCamera.position, g_freeFlyCamera.target);
+	g_freeFlyCamera.view = DirectX::XMMatrixLookAtLH(g_freeFlyCamera.position, g_freeFlyCamera.target, g_freeFlyCamera.up);
 }

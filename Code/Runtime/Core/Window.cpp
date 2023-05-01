@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <cassert>
 #include <stdio.h>
+#include <array>
 
 namespace Styx
 {
@@ -36,6 +37,10 @@ namespace Styx
 	bool mShown = false;
 	bool mMinimized = false;
 	bool mMaximized = false;
+
+	// NOTE(gmodarelli): Temp
+	std::array<bool, 6> mKeys;
+	std::array<bool, 6> mPreviousFrameKeys;
 
 	void Window::Initialize()
 	{
@@ -157,6 +162,16 @@ namespace Styx
 				}
 			}
 		}
+
+		// NOTE(gmodarelli): This is here temporarily just to get camera movement going
+		mPreviousFrameKeys = mKeys;
+		const uint8_t* keyStates = SDL_GetKeyboardState(nullptr);
+		mKeys[0] = keyStates[SDL_SCANCODE_Q];
+		mKeys[1] = keyStates[SDL_SCANCODE_W];
+		mKeys[2] = keyStates[SDL_SCANCODE_E];
+		mKeys[3] = keyStates[SDL_SCANCODE_A];
+		mKeys[4] = keyStates[SDL_SCANCODE_S];
+		mKeys[5] = keyStates[SDL_SCANCODE_D];
 	}
 
 	void* Window::GetWindowHandle()
@@ -187,4 +202,9 @@ namespace Styx
 		return mMinimized;
 	}
 
+	bool Window::GetKey(const int key)
+	{
+		assert(key >= 0 && key < 6);
+		return mKeys[(uint32_t)key];
+	}
 }

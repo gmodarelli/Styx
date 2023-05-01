@@ -21,6 +21,7 @@ struct PassConstants
 	float4x4 projectionMatrix;
 	uint positionBufferIndex;
 	uint normalBufferIndex;
+	uint uvBufferIndex;
 };
 
 struct PerDrawConstants

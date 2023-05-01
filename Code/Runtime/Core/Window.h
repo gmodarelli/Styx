@@ -39,5 +39,6 @@ namespace Styx
 		static bool ShouldClose();
 		static bool IsMinimized();
 
+		static bool GetKey(const int key);
 	};
 }
