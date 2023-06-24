@@ -11,7 +11,7 @@ namespace Styx
 	void Scene::Initialize(const char* path)
 	{
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate);
+		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
 			printf("[Main] Failed to load model at '%s'. Error: %s\n", path, importer.GetErrorString());
@@ -61,10 +61,12 @@ namespace Styx
 	{
 		assert(mesh->HasPositions());
 		assert(mesh->HasNormals());
+		assert(mesh->HasTangentsAndBitangents());
 		assert(mesh->HasTextureCoords(0));
 
 		std::vector<float> positions;
 		std::vector<float> normals;
+		std::vector<float> tangents;
 		std::vector<float> uvs;
 		std::vector<uint32_t> indices;
 
@@ -83,6 +85,10 @@ namespace Styx
 			normals.push_back(mesh->mNormals[i].y);
 			normals.push_back(mesh->mNormals[i].z);
 
+			tangents.push_back(mesh->mTangents[i].x);
+			tangents.push_back(mesh->mTangents[i].y);
+			tangents.push_back(mesh->mTangents[i].z);
+
 			uvs.push_back(mesh->mTextureCoords[0][i].x);
 			uvs.push_back(mesh->mTextureCoords[0][i].y);
 		}
@@ -100,8 +106,10 @@ namespace Styx
 
 		assert(positions.size() > 0);
 		assert(normals.size() > 0);
+		assert(tangents.size() > 0);
 		assert(uvs.size() > 0);
 		assert(positions.size() == normals.size());
+		assert(positions.size() == tangents.size());
 		assert(indices.size() > 0);
 
 		{
@@ -143,6 +151,27 @@ namespace Styx
 			uploadBuffer->mBufferDataSize = sizeInBytes;
 
 			memcpy_s(uploadBuffer->mBufferData.get(), sizeInBytes, normals.data(), sizeInBytes);
+			device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
+		}
+
+		{
+			uint32_t sizeInBytes = static_cast<uint32_t>(tangents.size() * sizeof(float));
+			D3D12Lite::BufferCreationDesc desc{};
+			desc.mSize = sizeInBytes;
+			desc.mAccessFlags = D3D12Lite::BufferAccessFlags::gpuOnly;
+			desc.mViewFlags = D3D12Lite::BufferViewFlags::srv;
+			desc.mStride = sizeof(float) * 3;
+			desc.mIsRawAccess = true;
+			desc.mDebugName = L"Tangent Buffer";
+
+			tangentBuffer = device->CreateBuffer(desc);
+
+			std::unique_ptr<D3D12Lite::BufferUpload> uploadBuffer = std::make_unique<D3D12Lite::BufferUpload>();
+			uploadBuffer->mBuffer = tangentBuffer.get();
+			uploadBuffer->mBufferData = std::make_unique<uint8_t[]>(sizeInBytes);
+			uploadBuffer->mBufferDataSize = sizeInBytes;
+
+			memcpy_s(uploadBuffer->mBufferData.get(), sizeInBytes, tangents.data(), sizeInBytes);
 			device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
 		}
 
@@ -189,12 +218,14 @@ namespace Styx
 			device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
 		}
 	}
+
 	void Model::Destroy(D3D12Lite::Device* device)
 	{
 		for (uint32_t i = 0; i < meshes.size(); i++)
 		{
 			device->DestroyBuffer(std::move(meshes[i]->positionBuffer));
 			device->DestroyBuffer(std::move(meshes[i]->normalBuffer));
+			device->DestroyBuffer(std::move(meshes[i]->tangentBuffer));
 			device->DestroyBuffer(std::move(meshes[i]->uvBuffer));
 			device->DestroyBuffer(std::move(meshes[i]->indexBuffer));
 		}

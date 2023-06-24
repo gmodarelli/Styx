@@ -139,7 +139,7 @@ int main()
 		D3D12Lite::PipelineResourceLayout resourceLayout;
 		resourceLayout.mSpaces[D3D12Lite::PER_PASS_SPACE] = &g_perPassResourceSpace;
 		// TODO: Make this a struct
-		resourceLayout.mNum32BitConstants = 16 + 4;
+		resourceLayout.mNum32BitConstants = 16 + 5;
 
 		g_meshPreviewPSO = device->CreateGraphicsPipeline(psoDesc, resourceLayout);
 	}
@@ -273,7 +273,8 @@ int main()
 						graphicsContext->SetPipeline32BitConstant(1, mesh->vertexOffset, 16);
 						graphicsContext->SetPipeline32BitConstant(1, mesh->positionBuffer->mDescriptorHeapIndex, 17);
 						graphicsContext->SetPipeline32BitConstant(1, mesh->normalBuffer->mDescriptorHeapIndex, 18);
-						graphicsContext->SetPipeline32BitConstant(1, mesh->uvBuffer->mDescriptorHeapIndex, 19);
+						graphicsContext->SetPipeline32BitConstant(1, mesh->tangentBuffer->mDescriptorHeapIndex, 19);
+						graphicsContext->SetPipeline32BitConstant(1, mesh->uvBuffer->mDescriptorHeapIndex, 20);
 
 						graphicsContext->DrawIndexed(mesh->indexCount, mesh->indexOffset, 0);
 					}

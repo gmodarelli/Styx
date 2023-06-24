@@ -35,6 +35,7 @@ namespace Styx
 
 		std::unique_ptr<D3D12Lite::BufferResource> positionBuffer;
 		std::unique_ptr<D3D12Lite::BufferResource> normalBuffer;
+		std::unique_ptr<D3D12Lite::BufferResource> tangentBuffer;
 		std::unique_ptr<D3D12Lite::BufferResource> uvBuffer;
 		std::unique_ptr<D3D12Lite::BufferResource> indexBuffer;
 	};

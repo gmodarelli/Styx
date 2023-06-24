@@ -27,6 +27,7 @@ struct PerDrawConstants
 	uint vertexOffset;
 	uint positionBufferIndex;
 	uint normalBufferIndex;
+	uint tangentBufferIndex;
 	uint uvBufferIndex;
 };
 
