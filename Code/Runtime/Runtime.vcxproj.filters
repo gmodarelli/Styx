@@ -24,6 +24,9 @@
     <ClCompile Include="RHI\D3D12Lite.cpp">
       <Filter>RHI</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Model.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Window.h">
@@ -37,6 +40,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Assets\Shaders\ShaderInterop.h">
       <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Model.h">
+      <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

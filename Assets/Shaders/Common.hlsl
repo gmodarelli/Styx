@@ -19,15 +19,15 @@ struct PassConstants
 {
 	float4x4 viewMatrix;
 	float4x4 projectionMatrix;
-	uint positionBufferIndex;
-	uint normalBufferIndex;
-	uint uvBufferIndex;
 };
 
 struct PerDrawConstants
 {
 	float4x4 worldMatrix;
 	uint vertexOffset;
+	uint positionBufferIndex;
+	uint normalBufferIndex;
+	uint uvBufferIndex;
 };
 
 

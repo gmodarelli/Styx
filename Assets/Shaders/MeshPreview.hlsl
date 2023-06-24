@@ -13,9 +13,9 @@ struct Interpolators
 
 Interpolators VertexShader(uint vertexId : SV_VertexID)
 {
-	ByteAddressBuffer positionBuffer = ResourceDescriptorHeap[PassConstantBuffer.positionBufferIndex];
-	ByteAddressBuffer normalBuffer = ResourceDescriptorHeap[PassConstantBuffer.normalBufferIndex];
-	ByteAddressBuffer uvBuffer = ResourceDescriptorHeap[PassConstantBuffer.uvBufferIndex];
+	ByteAddressBuffer positionBuffer = ResourceDescriptorHeap[DrawConstantBuffer.positionBufferIndex];
+	ByteAddressBuffer normalBuffer = ResourceDescriptorHeap[DrawConstantBuffer.normalBufferIndex];
+	ByteAddressBuffer uvBuffer = ResourceDescriptorHeap[DrawConstantBuffer.uvBufferIndex];
 
 	uint vertexIndex = vertexId + DrawConstantBuffer.vertexOffset;
 	float3 position = positionBuffer.Load<float3>(vertexIndex * sizeof(float3));

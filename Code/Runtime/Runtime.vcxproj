@@ -65,7 +65,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;$(SolutionDir)3rdParty\assimp_x64-windows\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -73,7 +73,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;dxcompiler.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)Binaries</AdditionalLibraryDirectories>
@@ -96,7 +96,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;$(SolutionDir)3rdParty\assimp_x64-windows\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -106,7 +106,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;dxgi.lib;dxguid.lib;d3d12.lib;dxcompiler.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)Binaries</AdditionalLibraryDirectories>
@@ -115,12 +115,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.cpp" />
     <ClCompile Include="Core\Window.cpp" />
+    <ClCompile Include="Renderer\Model.cpp" />
     <ClCompile Include="RHI\D3D12Lite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\include\D3D12MemAlloc.h" />
     <ClInclude Include="..\..\Assets\Shaders\ShaderInterop.h" />
     <ClInclude Include="Core\Window.h" />
+    <ClInclude Include="Renderer\Model.h" />
     <ClInclude Include="RHI\D3D12Lite.h" />
   </ItemGroup>
   <ItemGroup>
