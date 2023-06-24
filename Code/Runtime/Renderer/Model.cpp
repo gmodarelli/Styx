@@ -49,7 +49,7 @@ namespace Styx
 			model->meshes.push_back(std::make_unique<Mesh>(m_Device, mesh, scene));
 		}
 
-		m_Models.emplace_back(std::move(model));
+		m_Models.push_back(std::move(model));
 
 		for (uint32_t i = 0; i < node->mNumChildren; i++)
 		{
