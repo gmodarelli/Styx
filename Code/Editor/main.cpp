@@ -24,7 +24,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <Renderer/Model.h>
 
 #include <memory>
-#include <vector>
 #include <array>
 
 #include <stdio.h>
@@ -92,9 +91,8 @@ int main()
 		g_depthBuffer = device->CreateTexture(desc);
 	}
 
-	std::vector<Mesh> meshes;
-	std::vector<Transform> transforms;
-	Scene::LoadScene(device.get(), "Assets/Models/NewSponza_Main_glTF_002.gltf", meshes, transforms);
+	Scene scene(device.get());
+	scene.Initialize("Assets/Models/NewSponza_Main_glTF_002.gltf");
 
 	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.0f), screenSize.x / (float)screenSize.y, 0.01f, 100.0f);
 
@@ -224,20 +222,26 @@ int main()
 			graphicsContext->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, g_perPassResourceSpace);
 			graphicsContext->SetDefaultViewPortAndScissor(device->GetScreenSize());
 
-			for (uint32_t i = 0; i < meshes.size(); i++)
+			for (uint32_t modelIndex = 0; modelIndex < scene.m_Models.size(); modelIndex++)
 			{
-				if (meshes[i].positionBuffer->mIsReady && meshes[i].normalBuffer->mIsReady && meshes[i].uvBuffer->mIsReady && meshes[i].indexBuffer->mIsReady)
+				for (uint32_t i = 0; i < scene.m_Models[modelIndex]->meshes.size(); i++)
 				{
-					graphicsContext->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-					graphicsContext->SetIndexBuffer(*meshes[i].indexBuffer);
+					Mesh* mesh = scene.m_Models[modelIndex]->meshes[i].get();
+					Transform& transform = scene.m_Models[modelIndex]->transforms[i];
 
-					graphicsContext->SetPipeline32BitConstants(1, 16, transforms[i].worldMatrix.m, 0);
-					graphicsContext->SetPipeline32BitConstant(1, meshes[i].vertexOffset, 16);
-					graphicsContext->SetPipeline32BitConstant(1, meshes[i].positionBuffer->mDescriptorHeapIndex, 17);
-					graphicsContext->SetPipeline32BitConstant(1, meshes[i].normalBuffer->mDescriptorHeapIndex, 18);
-					graphicsContext->SetPipeline32BitConstant(1, meshes[i].uvBuffer->mDescriptorHeapIndex, 19);
+					if (mesh->positionBuffer->mIsReady && mesh->normalBuffer->mIsReady && mesh->uvBuffer->mIsReady && mesh->indexBuffer->mIsReady)
+					{
+						graphicsContext->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+						graphicsContext->SetIndexBuffer(*mesh->indexBuffer);
 
-					graphicsContext->DrawIndexed(meshes[i].indexCount, meshes[i].indexOffset, 0);
+						graphicsContext->SetPipeline32BitConstants(1, 16, transform.worldMatrix.m, 0);
+						graphicsContext->SetPipeline32BitConstant(1, mesh->vertexOffset, 16);
+						graphicsContext->SetPipeline32BitConstant(1, mesh->positionBuffer->mDescriptorHeapIndex, 17);
+						graphicsContext->SetPipeline32BitConstant(1, mesh->normalBuffer->mDescriptorHeapIndex, 18);
+						graphicsContext->SetPipeline32BitConstant(1, mesh->uvBuffer->mDescriptorHeapIndex, 19);
+
+						graphicsContext->DrawIndexed(mesh->indexCount, mesh->indexOffset, 0);
+					}
 				}
 			}
 
@@ -253,20 +257,11 @@ int main()
 
 	device->WaitForIdle();
 
+	scene.Shutdown();
+
 	device->DestroyPipelineStateObject(std::move(g_meshPreviewPSO));
 	device->DestroyShader(std::move(g_vertexShader));
 	device->DestroyShader(std::move(g_pixelShader));
-
-	for (uint32_t i = 0; i < meshes.size(); i++)
-	{
-		if (meshes[i].positionBuffer->mIsReady && meshes[i].normalBuffer->mIsReady && meshes[i].uvBuffer->mIsReady && meshes[i].indexBuffer->mIsReady)
-		{
-			device->DestroyBuffer(std::move(meshes[i].positionBuffer));
-			device->DestroyBuffer(std::move(meshes[i].normalBuffer));
-			device->DestroyBuffer(std::move(meshes[i].uvBuffer));
-			device->DestroyBuffer(std::move(meshes[i].indexBuffer));
-		}
-	}
 
 	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
 	{

@@ -12,6 +12,10 @@ namespace D3D12Lite
 	struct BufferResource;
 }
 
+struct aiMesh;
+struct aiNode;
+struct aiScene;
+
 namespace Styx
 {
 	struct Transform
@@ -19,8 +23,11 @@ namespace Styx
 		DirectX::XMFLOAT4X4 worldMatrix;
 	};
 
-	struct Mesh
+	class Mesh
 	{
+	public:
+		Mesh(D3D12Lite::Device* device, aiMesh* mesh, const aiScene* scene);
+
 		uint32_t vertexCount;
 		uint32_t vertexOffset;
 		uint32_t indexCount;
@@ -32,9 +39,30 @@ namespace Styx
 		std::unique_ptr<D3D12Lite::BufferResource> indexBuffer;
 	};
 
+	struct Model
+	{
+		std::vector<std::unique_ptr<Mesh>> meshes;
+		std::vector<Transform> transforms;
+
+		void Destroy(D3D12Lite::Device* device);
+	};
+
 	class Scene
 	{
 	public:
-		static void LoadScene(D3D12Lite::Device* device, const char* path, std::vector<Mesh>& outMeshes, std::vector<Transform>& outTransforms);
+		Scene(D3D12Lite::Device* device) : m_Device(device) {};
+		~Scene() = default;
+
+		void Initialize(const char* path);
+		void Shutdown();
+
+	private:
+		void ProcessNode(aiNode* node, const aiScene* scene);
+
+	public:
+		std::vector<std::unique_ptr<Model>> m_Models;
+
+	private:
+		D3D12Lite::Device* m_Device;
 	};
 }
