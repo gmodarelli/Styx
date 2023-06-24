@@ -39,6 +39,14 @@ namespace Styx
 		static bool ShouldClose();
 		static bool IsMinimized();
 
+		static float GetDeltaTime();
+
 		static bool GetKey(const int key);
+		static void GetMousePosition(float* x, float* y);
+		static void SetMousePosition(float x, float y);
+		static void GetMouseDelta(float* x, float* y);
+		static uint32_t GetDisplayIndex();
+		static uint32_t GetDisplayWidth();
+		static uint32_t GetDisplayHeight();
 	};
 }

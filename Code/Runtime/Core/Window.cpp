@@ -39,8 +39,18 @@ namespace Styx
 	bool mMaximized = false;
 
 	// NOTE(gmodarelli): Temp
-	std::array<bool, 6> mKeys;
-	std::array<bool, 6> mPreviousFrameKeys;
+	// Timer
+	uint64_t mTimerLast = 0;
+	uint64_t mTimerNow = 0;
+	float mDeltaTime = 0.0f;
+
+	// NOTE(gmodarelli): Temp
+	std::array<bool, 10> mKeys;
+	std::array<bool, 10> mPreviousFrameKeys;
+	float mMousePositionX = 0.0f;
+	float mMousePositionY = 0.0f;
+	float mMouseDeltaX = 0.0f;
+	float mMouseDeltaY = 0.0f;
 
 	void Window::Initialize()
 	{
@@ -129,6 +139,10 @@ namespace Styx
 
 	void Window::Tick()
 	{
+		mTimerLast = mTimerNow;
+		mTimerNow = SDL_GetPerformanceCounter();
+		mDeltaTime = (float)((mTimerNow - mTimerLast) / (double)SDL_GetPerformanceFrequency());
+
 		SDL_Event sdlEvent;
 		while (SDL_PollEvent(&sdlEvent))
 		{
@@ -172,6 +186,18 @@ namespace Styx
 		mKeys[3] = keyStates[SDL_SCANCODE_A];
 		mKeys[4] = keyStates[SDL_SCANCODE_S];
 		mKeys[5] = keyStates[SDL_SCANCODE_D];
+		mKeys[6] = keyStates[SDL_SCANCODE_LSHIFT];
+
+		int x, y;
+		uint32_t mouse_states = SDL_GetGlobalMouseState(&x, &y);
+		mMouseDeltaX = (float)x - mMousePositionX;
+		mMouseDeltaY = (float)y - mMousePositionY;
+		mMousePositionX = (float)x;
+		mMousePositionY = (float)y;
+
+		mKeys[7] = (mouse_states & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+		mKeys[8] = (mouse_states & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
+		mKeys[9] = (mouse_states & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
 	}
 
 	void* Window::GetWindowHandle()
@@ -202,9 +228,64 @@ namespace Styx
 		return mMinimized;
 	}
 
+	float Window::GetDeltaTime()
+	{
+		return mDeltaTime;
+	}
+
 	bool Window::GetKey(const int key)
 	{
-		assert(key >= 0 && key < 6);
+		assert(key >= 0 && key < 10);
 		return mKeys[(uint32_t)key];
 	}
+
+	void Window::GetMousePosition(float* x, float* y)
+	{
+		*x = mMousePositionX;
+		*y = mMousePositionY;
+	}
+
+	void Window::SetMousePosition(float x, float y)
+	{
+		if (SDL_WarpMouseGlobal((int)x, (int)y) != 0)
+		{
+			return;
+		}
+
+		mMousePositionX = x;
+		mMousePositionY = y;
+	}
+
+	void Window::GetMouseDelta(float* x, float* y)
+	{
+		*x = mMouseDeltaX;
+		*y = mMouseDeltaY;
+	}
+
+    uint32_t Window::GetDisplayIndex()
+    {
+        int index = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mWindow));
+
+        // during engine startup, the window doesn't exist yet, therefore it's not displayed by any monitor.
+        // in this case the index can be -1, so we'll instead set the index to 0 (whatever the primary display is)
+        return index != -1 ? index : 0;
+    }
+
+    uint32_t Window::GetDisplayWidth()
+    {
+        SDL_DisplayMode display_mode;
+        assert(SDL_GetCurrentDisplayMode(GetDisplayIndex(), &display_mode) == 0);
+
+        return display_mode.w;
+    }
+
+    uint32_t Window::GetDisplayHeight()
+    {
+        int display_index = SDL_GetWindowDisplayIndex(static_cast<SDL_Window*>(mWindow));
+
+        SDL_DisplayMode display_mode;
+        assert(SDL_GetCurrentDisplayMode(GetDisplayIndex(), &display_mode) == 0);
+
+        return display_mode.h;
+    }
 }

@@ -60,9 +60,11 @@ struct Camera
 	DirectX::XMMATRIX view;
 	float yaw = 0.0f;
 	float pitch = 0.0f;
+	float movementSpeed = 5.0f;
 };
 
 Camera g_freeFlyCamera;
+float g_mouseSensitivity = 0.01f;
 void updateFreeFlyCamera();
 
 // Input Axis Mapping
@@ -145,6 +147,7 @@ int main()
 	while (!Window::ShouldClose())
 	{
 		Window::Tick();
+		float deltaTime = Window::GetDeltaTime();
 
 		D3D12Lite::Uint2 swapchainSize = device->GetScreenSize();
 		if (swapchainSize.x != Window::GetWidth() || swapchainSize.y != Window::GetHeight())
@@ -157,36 +160,68 @@ int main()
 
 		// Update
 		{
-			// Camera input movememnt
-			// W
-			if (Window::GetKey(1))
+			if (Window::GetKey(9)) // Right mouse button
 			{
-				g_inputForwardAxis += 5.0f * 0.001f;
-			}
-			// S
-			if (Window::GetKey(4))
-			{
-				g_inputForwardAxis -= 5.0f * 0.001f;
-			}
-			// A
-			if (Window::GetKey(3))
-			{
-				g_inputRightAxis -= 5.0f * 0.001f;
-			}
-			// D
-			if (Window::GetKey(5))
-			{
-				g_inputRightAxis += 5.0f * 0.001f;
-			}
-			// Q
-			if (Window::GetKey(0))
-			{
-				g_inputUpAxis += 5.0f * 0.001f;
-			}
-			// E
-			if (Window::GetKey(2))
-			{
-				g_inputUpAxis -= 5.0f * 0.001f;
+				// Mouse input movement
+				uint32_t edge_padding = 5;
+				float mouseX, mouseY;
+				Window::GetMousePosition(&mouseX, &mouseY);
+				if (mouseX >= Window::GetDisplayWidth() - edge_padding)
+				{
+					mouseX = static_cast<float>(edge_padding + 1);
+					Window::SetMousePosition(mouseX, mouseY);
+				}
+				else if (mouseX <= edge_padding)
+				{
+					mouseX = static_cast<float>(Window::GetDisplayWidth() - edge_padding - 1);
+					Window::SetMousePosition(mouseX, mouseY);
+				}
+
+				float mouseDeltaX, mouseDeltaY;
+				Window::GetMouseDelta(&mouseDeltaX, &mouseDeltaY);
+				g_freeFlyCamera.yaw += mouseDeltaX * g_mouseSensitivity;
+				g_freeFlyCamera.pitch += mouseDeltaY * g_mouseSensitivity;
+
+				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch < -80.0f ? -80.0f : g_freeFlyCamera.pitch;
+				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch > 80.0f ? 80.0f : g_freeFlyCamera.pitch;
+
+				// Camera input movement
+				float movememntSpeed = g_freeFlyCamera.movementSpeed;
+				if (Window::GetKey(6)) // Left Shift
+				{
+					movememntSpeed *= 2.0f;
+				}
+
+				// W
+				if (Window::GetKey(1))
+				{
+					g_inputForwardAxis += movememntSpeed * deltaTime;
+				}
+				// S
+				if (Window::GetKey(4))
+				{
+					g_inputForwardAxis -= movememntSpeed * deltaTime;
+				}
+				// A
+				if (Window::GetKey(3))
+				{
+					g_inputRightAxis -= movememntSpeed * deltaTime;
+				}
+				// D
+				if (Window::GetKey(5))
+				{
+					g_inputRightAxis += movememntSpeed * deltaTime;
+				}
+				// Q
+				if (Window::GetKey(0))
+				{
+					g_inputUpAxis += movememntSpeed * deltaTime;
+				}
+				// E
+				if (Window::GetKey(2))
+				{
+					g_inputUpAxis -= movememntSpeed * deltaTime;
+				}
 			}
 
 			updateFreeFlyCamera();
