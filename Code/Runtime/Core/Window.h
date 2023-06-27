@@ -48,5 +48,8 @@ namespace Styx
 		static uint32_t GetDisplayIndex();
 		static uint32_t GetDisplayWidth();
 		static uint32_t GetDisplayHeight();
+
+		static void* GetSDLWindow();
+		static void HackHackHack();
 	};
 }

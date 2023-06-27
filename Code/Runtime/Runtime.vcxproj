@@ -65,7 +65,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;$(SolutionDir)3rdParty\assimp_x64-windows\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;$(SolutionDir)3rdParty\assimp_x64-windows\include\;$(SolutionDir)3rdParty\imgui-1.89.6\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -96,7 +96,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;$(SolutionDir)3rdParty\assimp_x64-windows\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Core;$(SolutionDir)Assets\Shaders\;$(SolutionDir)3rdParty\SDL2-2.26.5\include\;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include;$(SolutionDir)3rdParty\microsoft.direct3d.d3d12.1.608.3\build\native\include\d3dx12\;$(SolutionDir)3rdParty\D3D12MemoryAllocator-2.0.1\include\;$(SolutionDir)3rdParty\dxc_2023_03_01\inc\;$(SolutionDir)3rdParty\assimp_x64-windows\include\;$(SolutionDir)3rdParty\imgui-1.89.6\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -114,12 +114,27 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.cpp" />
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_dx12.cpp" />
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Core\Window.cpp" />
     <ClCompile Include="Renderer\Model.cpp" />
     <ClCompile Include="RHI\D3D12Lite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\include\D3D12MemAlloc.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_dx12.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_sdl2.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imconfig.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imstb_truetype.h" />
     <ClInclude Include="..\..\Assets\Shaders\ShaderInterop.h" />
     <ClInclude Include="Core\Window.h" />
     <ClInclude Include="Renderer\Model.h" />

@@ -22,6 +22,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <Core/Window.h>
 #include <RHI/D3D12Lite.h>
 #include <Renderer/Model.h>
+#include <imgui/imgui.h>
+#include <imgui/backends/imgui_impl_sdl2.h>
+#include <imgui/backends/imgui_impl_dx12.h>
 
 #include <memory>
 #include <array>
@@ -144,6 +147,22 @@ int main()
 		g_meshPreviewPSO = device->CreateGraphicsPipeline(psoDesc, resourceLayout);
 	}
 
+	// ImGUI
+	{
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::StyleColorsDark();
+
+		D3D12Lite::Descriptor descriptor = device->GetImguiDescriptor(0);
+		D3D12Lite::Descriptor descriptor2 = device->GetImguiDescriptor(1);
+
+		ImGui_ImplSDL2_InitForD3D(static_cast<SDL_Window*>(Window::GetSDLWindow()));
+		ImGui_ImplDX12_Init(device->GetDevice(), D3D12Lite::NUM_FRAMES_IN_FLIGHT, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, nullptr,
+			descriptor.mCPUHandle, descriptor.mGPUHandle, descriptor2.mCPUHandle, descriptor2.mGPUHandle);
+		Window::HackHackHack();
+	}
+
 	while (!Window::ShouldClose())
 	{
 		Window::Tick();
@@ -231,6 +250,16 @@ int main()
 		{
 			device->BeginFrame();
 
+			// ImGUI
+			{
+				ImGui_ImplSDL2_NewFrame();
+				ImGui_ImplDX12_NewFrame();
+				ImGui::NewFrame();
+
+				ImGui::ShowDemoWindow();
+				ImGui::Render();
+			}
+
 			D3D12Lite::TextureResource& backBuffer = device->GetCurrentBackBuffer();
 
 			graphicsContext->Reset();
@@ -281,6 +310,16 @@ int main()
 				}
 			}
 
+			// ImGUI
+			{
+				D3D12Lite::PipelineInfo pipeline;
+				pipeline.mPipeline = nullptr;
+				pipeline.mRenderTargets.push_back(&backBuffer);
+				graphicsContext->SetPipeline(pipeline);
+				ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), graphicsContext->GetCommandList());
+				ImGui::EndFrame();
+			}
+
 			graphicsContext->AddBarrier(backBuffer, D3D12_RESOURCE_STATE_PRESENT);
 			graphicsContext->FlushBarriers();
 
@@ -292,6 +331,9 @@ int main()
 	}
 
 	device->WaitForIdle();
+
+	ImGui_ImplSDL2_Shutdown();
+	ImGui_ImplDX12_Shutdown();
 
 	scene.Shutdown();
 

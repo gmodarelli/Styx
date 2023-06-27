@@ -62,7 +62,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)Code\Runtime;$(SolutionDir)3rdParty\assimp_x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Code\Runtime;$(SolutionDir)3rdParty\assimp_x64-windows\include;$(SolutionDir)3rdParty\imgui-1.89.6\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -85,7 +85,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)Code\Runtime;$(SolutionDir)3rdParty\assimp_x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Code\Runtime;$(SolutionDir)3rdParty\assimp_x64-windows\include;$(SolutionDir)3rdParty\imgui-1.89.6\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

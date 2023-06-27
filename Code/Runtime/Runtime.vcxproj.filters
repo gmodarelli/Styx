@@ -13,6 +13,12 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{2ffef3c3-2e49-497c-9c2a-3bda2a4a688e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3rdParty">
+      <UniqueIdentifier>{07ce5ffe-7f56-4e9a-82ee-1d8efbed9e43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdParty\ImGUI">
+      <UniqueIdentifier>{295253f2-9d99-417f-bb35-9f000491239e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Window.cpp">
@@ -26,6 +32,27 @@
     </ClCompile>
     <ClCompile Include="Renderer\Model.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui.cpp">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_demo.cpp">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_draw.cpp">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_tables.cpp">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_widgets.cpp">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_dx12.cpp">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_sdl2.cpp">
+      <Filter>3rdParty\ImGUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +70,30 @@
     </ClInclude>
     <ClInclude Include="Renderer\Model.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imconfig.h">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui.h">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imgui_internal.h">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imstb_rectpack.h">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imstb_textedit.h">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\imstb_truetype.h">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_dx12.h">
+      <Filter>3rdParty\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_sdl2.h">
+      <Filter>3rdParty\ImGUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

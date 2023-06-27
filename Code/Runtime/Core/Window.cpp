@@ -28,6 +28,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include <array>
 
+#include <imgui/backends/imgui_impl_sdl2.h>
+
 namespace Styx
 {
 	SDL_Window* mWindow = nullptr;
@@ -51,6 +53,8 @@ namespace Styx
 	float mMousePositionY = 0.0f;
 	float mMouseDeltaX = 0.0f;
 	float mMouseDeltaY = 0.0f;
+
+	bool imGuiInitialized = false;
 
 	void Window::Initialize()
 	{
@@ -146,6 +150,15 @@ namespace Styx
 		SDL_Event sdlEvent;
 		while (SDL_PollEvent(&sdlEvent))
 		{
+			if (imGuiInitialized)
+			{
+				ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
+				// if (ImGui_ImplSDL2_ProcessEvent(&sdlEvent))
+				// {
+				// 	continue;
+				// }
+			}
+
 			if (sdlEvent.type == SDL_WINDOWEVENT)
 			{
 				if (sdlEvent.window.windowID == SDL_GetWindowID(mWindow))
@@ -288,4 +301,14 @@ namespace Styx
 
         return display_mode.h;
     }
+
+	void* Window::GetSDLWindow()
+	{
+		return mWindow;
+	}
+
+	void Window::HackHackHack()
+	{
+		imGuiInitialized = true;
+	}
 }
