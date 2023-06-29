@@ -22,6 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <Core/Window.h>
 #include <RHI/D3D12Lite.h>
 #include <Renderer/Model.h>
+#include <Renderer/TerrainRenderer.h>
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_dx12.h>
@@ -52,20 +53,6 @@ DirectX::XMVECTOR g_worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 DirectX::XMVECTOR g_worldRight = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 
 // Cameras
-struct Camera
-{
-	DirectX::XMVECTOR position;
-	DirectX::XMVECTOR target;
-	DirectX::XMVECTOR up;
-	DirectX::XMVECTOR forward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	DirectX::XMVECTOR right = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-	DirectX::XMMATRIX transform;
-	DirectX::XMMATRIX view;
-	float yaw = 0.0f;
-	float pitch = 0.0f;
-	float movementSpeed = 5.0f;
-};
-
 Camera g_freeFlyCamera;
 float g_mouseSensitivity = 0.01f;
 void updateFreeFlyCamera();
@@ -77,7 +64,6 @@ float g_inputUpAxis = 0.0f;
 
 void ImGuiHierarchyForModel(Model* model, bool first)
 {
-
 	if (first)
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 
@@ -85,7 +71,7 @@ void ImGuiHierarchyForModel(Model* model, bool first)
 	{
 		for (uint32_t i = 0; i < model->meshes.size(); i++)
 		{
-			ImGui::Text(model->meshes[i]->name);
+			ImGui::Text(model->meshes[i].name);
 		}
 
 		for (uint32_t i = 0; i < model->m_Children.size(); i++)
@@ -118,10 +104,10 @@ int main()
 		g_depthBuffer = device->CreateTexture(desc);
 	}
 
-	Scene scene(device.get());
-	scene.Initialize("Assets/Models/NewSponza_Main_glTF_002.gltf");
+	// Scene scene(device.get());
+	// scene.Initialize("Assets/Models/NewSponza_Main_glTF_002.gltf");
 
-	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.0f), screenSize.x / (float)screenSize.y, 0.01f, 100.0f);
+	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.0f), screenSize.x / (float)screenSize.y, 0.01f, 1000.0f);
 
 	D3D12Lite::BufferCreationDesc passConstantBufferDesc{};
 	passConstantBufferDesc.mSize = sizeof(PassConstants);
@@ -133,6 +119,13 @@ int main()
 	{
 		g_passConstantBuffers[i] = device->CreateBuffer(passConstantBufferDesc);
 	}
+
+	g_perPassResourceSpace.SetCBV(g_passConstantBuffers[0].get());
+	g_perPassResourceSpace.Lock();
+
+	// This needs to happen AFTER we create the global per pass resource space
+	TerrainRenderer terrainRenderer(device.get());
+	terrainRenderer.Initialize("Assets/Models/TerrainPlane_Simple.gltf", &g_perPassResourceSpace);
 
 	// Mesh Preview PSO
 	{
@@ -157,9 +150,6 @@ int main()
 		psoDesc.mDepthStencilDesc.DepthEnable = true;
 		psoDesc.mRenderTargetDesc.mDepthStencilFormat = g_depthFormat;
 		psoDesc.mDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-
-		g_perPassResourceSpace.SetCBV(g_passConstantBuffers[0].get());
-		g_perPassResourceSpace.Lock();
 
 		D3D12Lite::PipelineResourceLayout resourceLayout;
 		resourceLayout.mSpaces[D3D12Lite::PER_PASS_SPACE] = &g_perPassResourceSpace;
@@ -223,8 +213,10 @@ int main()
 				g_freeFlyCamera.yaw += mouseDeltaX * g_mouseSensitivity;
 				g_freeFlyCamera.pitch += mouseDeltaY * g_mouseSensitivity;
 
-				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch < -80.0f ? -80.0f : g_freeFlyCamera.pitch;
-				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch > 80.0f ? 80.0f : g_freeFlyCamera.pitch;
+				float minYawRad = DEG_TO_RAD(-80.0f);
+				float maxYawRad = DEG_TO_RAD(80.0f);
+				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch < minYawRad ? minYawRad : g_freeFlyCamera.pitch;
+				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch > maxYawRad ? maxYawRad : g_freeFlyCamera.pitch;
 
 				// Camera input movement
 				float movememntSpeed = g_freeFlyCamera.movementSpeed;
@@ -278,9 +270,43 @@ int main()
 				ImGui_ImplDX12_NewFrame();
 				ImGui::NewFrame();
 
-				ImGui::Begin("Hierarchy");
+				// ImGui::Begin("Hierarchy");
+				// {
+				// 	ImGuiHierarchyForModel(scene.m_Root, true);
+				// }
+				// ImGui::End();
+
+				ImGui::Begin("Camera");
 				{
-					ImGuiHierarchyForModel(scene.m_Root, true);
+					// Position
+					{
+						DirectX::XMFLOAT3 p;
+						DirectX::XMStoreFloat3(&p, g_freeFlyCamera.position);
+						float position[3] = { p.x, p.y, p.z };
+
+						if (ImGui::InputFloat3("Position", position))
+						{
+							g_freeFlyCamera.position = DirectX::XMVectorSet(position[0], position[1], position[2], 0.0f);
+						}
+					}
+
+					// Yaw & Pitch
+					{
+						float yawDeg = RAD_TO_DEG(g_freeFlyCamera.yaw);
+						float pitchDeg = RAD_TO_DEG(g_freeFlyCamera.pitch);
+						if (ImGui::InputFloat("Yaw", &yawDeg))
+						{
+							g_freeFlyCamera.yaw = DEG_TO_RAD(yawDeg);
+						}
+
+						if (ImGui::InputFloat("Pitch", &pitchDeg))
+						{
+							pitchDeg = pitchDeg < -80.0f ? -80.0f : pitchDeg;
+							pitchDeg = pitchDeg > 80.0f ? 80.0f : pitchDeg;
+
+							g_freeFlyCamera.pitch = DEG_TO_RAD(pitchDeg);
+						}
+					}
 				}
 				ImGui::End();
 
@@ -295,25 +321,27 @@ int main()
 			graphicsContext->AddBarrier(*g_depthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 			graphicsContext->FlushBarriers();
 
-			float color[4] = {0.3f, 0.3f, 0.8f, 1.0f};
+			float color[4] = {0.3f, 0.3f, 0.3f, 1.0f};
 			graphicsContext->ClearRenderTarget(backBuffer, color);
 			graphicsContext->ClearDepthStencilTarget(*g_depthBuffer, 1.0f, 0);
-
-			D3D12Lite::PipelineInfo pso;
-			pso.mPipeline = g_meshPreviewPSO.get();
-			pso.mRenderTargets.push_back(&backBuffer);
-			pso.mDepthStencilTarget = g_depthBuffer.get();
 
 			PassConstants passConstants;
 			DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, g_freeFlyCamera.view);
 			DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, projectionMatrix);
 			g_passConstantBuffers[device->GetFrameId()]->SetMappedData(&passConstants, sizeof(PassConstants));
 
-			graphicsContext->SetPipeline(pso);
-			graphicsContext->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, g_perPassResourceSpace);
-			graphicsContext->SetDefaultViewPortAndScissor(device->GetScreenSize());
+			terrainRenderer.Render(graphicsContext.get(), &g_perPassResourceSpace, &backBuffer, g_depthBuffer.get());
 
-			scene.Render(graphicsContext.get());
+			// D3D12Lite::PipelineInfo pso;
+			// pso.mPipeline = g_meshPreviewPSO.get();
+			// pso.mRenderTargets.push_back(&backBuffer);
+			// pso.mDepthStencilTarget = g_depthBuffer.get();
+
+			// graphicsContext->SetPipeline(pso);
+			// graphicsContext->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, g_perPassResourceSpace);
+			// graphicsContext->SetDefaultViewPortAndScissor(device->GetScreenSize());
+
+			// scene.Render(graphicsContext.get());
 
 			// ImGUI
 			{
@@ -339,8 +367,10 @@ int main()
 
 	ImGui_ImplSDL2_Shutdown();
 	ImGui_ImplDX12_Shutdown();
+	ImGui::DestroyContext();
 
-	scene.Shutdown();
+	// scene.Shutdown();
+	terrainRenderer.Shutdown();
 
 	device->DestroyPipelineStateObject(std::move(g_meshPreviewPSO));
 	device->DestroyShader(std::move(g_vertexShader));

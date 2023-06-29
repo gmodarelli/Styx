@@ -19,6 +19,9 @@
     <Filter Include="3rdParty\ImGUI">
       <UniqueIdentifier>{295253f2-9d99-417f-bb35-9f000491239e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3rdParty\imnodes">
+      <UniqueIdentifier>{4f4115c8-ff32-4614-a8ba-9f0869854b0b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Window.cpp">
@@ -53,6 +56,12 @@
     </ClCompile>
     <ClCompile Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_sdl2.cpp">
       <Filter>3rdParty\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\3rdParty\imnodes-master\imnodes\imnodes.cpp">
+      <Filter>3rdParty\imnodes</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\TerrainRenderer.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -95,6 +104,18 @@
     <ClInclude Include="..\..\3rdParty\imgui-1.89.6\imgui\backends\imgui_impl_sdl2.h">
       <Filter>3rdParty\ImGUI</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imnodes-master\imnodes\imnodes.h">
+      <Filter>3rdParty\imnodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdParty\imnodes-master\imnodes\imnodes_internal.h">
+      <Filter>3rdParty\imnodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\TerrainRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RendererTypes.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\3rdParty\D3D12MemoryAllocator-2.0.1\src\D3D12MemAlloc.natvis">
@@ -106,6 +127,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\..\Assets\Shaders\MeshPreview.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Assets\Shaders\Terrain.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

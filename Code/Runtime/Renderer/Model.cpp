@@ -1,5 +1,5 @@
 #include "Model.h"
-#include <../RHI/D3D12Lite.h>
+#include "RHI/D3D12Lite.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -36,16 +36,16 @@ namespace Styx
 		for (uint32_t i = 0; i < model->meshes.size(); i++)
 		{
 			gfx->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			gfx->SetIndexBuffer(*model->meshes[i]->indexBuffer);
+			gfx->SetIndexBuffer(*model->meshes[i].indexBuffer);
 
 			gfx->SetPipeline32BitConstants(1, 16, model->transforms[i].worldMatrix.m, 0);
-			gfx->SetPipeline32BitConstant(1, model->meshes[i]->vertexOffset, 16);
-			gfx->SetPipeline32BitConstant(1, model->meshes[i]->positionBuffer->mDescriptorHeapIndex, 17);
-			gfx->SetPipeline32BitConstant(1, model->meshes[i]->normalBuffer->mDescriptorHeapIndex, 18);
-			gfx->SetPipeline32BitConstant(1, model->meshes[i]->tangentBuffer->mDescriptorHeapIndex, 19);
-			gfx->SetPipeline32BitConstant(1, model->meshes[i]->uvBuffer->mDescriptorHeapIndex, 20);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i].vertexOffset, 16);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i].positionBuffer->mDescriptorHeapIndex, 17);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i].normalBuffer->mDescriptorHeapIndex, 18);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i].tangentBuffer->mDescriptorHeapIndex, 19);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i].uvBuffer->mDescriptorHeapIndex, 20);
 
-			gfx->DrawIndexed(model->meshes[i]->indexCount, model->meshes[i]->indexOffset, 0);
+			gfx->DrawIndexed(model->meshes[i].indexCount, model->meshes[i].indexOffset, 0);
 		}
 
 		for (uint32_t i = 0; i < model->m_Children.size(); i++)
@@ -72,7 +72,7 @@ namespace Styx
 			model->transforms.push_back(transform);
 
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			model->meshes.push_back(std::make_unique<Mesh>(m_Device, mesh, scene));
+			model->meshes.push_back(ProcessMesh(m_Device, mesh, scene));
 		}
 
 		if (parent == nullptr)
@@ -89,14 +89,16 @@ namespace Styx
 		}
 	}
 
-	Mesh::Mesh(D3D12Lite::Device* device, aiMesh* mesh, const aiScene* scene)
+	Mesh Scene::ProcessMesh(D3D12Lite::Device* device, aiMesh* mesh, const aiScene* scene)
 	{
+		Mesh outMesh;
+
 		assert(mesh->HasPositions());
 		assert(mesh->HasNormals());
 		assert(mesh->HasTangentsAndBitangents());
 		assert(mesh->HasTextureCoords(0));
 
-		memcpy_s(name, 256, mesh->mName.C_Str(), mesh->mName.length);
+		memcpy_s(outMesh.name, 256, mesh->mName.C_Str(), mesh->mName.length);
 
 		std::vector<float> positions;
 		std::vector<float> normals;
@@ -104,10 +106,10 @@ namespace Styx
 		std::vector<float> uvs;
 		std::vector<uint32_t> indices;
 
-		indexOffset = (uint32_t)indices.size();
-		indexCount = 0;
-		vertexOffset = (uint32_t)positions.size() / 3;
-		vertexCount = mesh->mNumVertices;
+		outMesh.indexOffset = (uint32_t)indices.size();
+		outMesh.indexCount = 0;
+		outMesh.vertexOffset = (uint32_t)positions.size() / 3;
+		outMesh.vertexCount = mesh->mNumVertices;
 
 		for (uint32_t i = 0; i < mesh->mNumVertices; i++)
 		{
@@ -130,7 +132,7 @@ namespace Styx
 		for (uint32_t i = 0; i < mesh->mNumFaces; i++)
 		{
 			aiFace face = mesh->mFaces[i];
-			indexCount += face.mNumIndices;
+			outMesh.indexCount += face.mNumIndices;
 
 			for (uint32_t j = 0; j < face.mNumIndices; j++)
 			{
@@ -156,10 +158,10 @@ namespace Styx
 			desc.mIsRawAccess = true;
 			desc.mDebugName = L"Position Buffer";
 
-			positionBuffer = device->CreateBuffer(desc);
+			outMesh.positionBuffer = device->CreateBuffer(desc);
 
 			std::unique_ptr<D3D12Lite::BufferUpload> uploadBuffer = std::make_unique<D3D12Lite::BufferUpload>();
-			uploadBuffer->mBuffer = positionBuffer.get();
+			uploadBuffer->mBuffer = outMesh.positionBuffer.get();
 			uploadBuffer->mBufferData = std::make_unique<uint8_t[]>(sizeInBytes);
 			uploadBuffer->mBufferDataSize = sizeInBytes;
 
@@ -177,10 +179,10 @@ namespace Styx
 			desc.mIsRawAccess = true;
 			desc.mDebugName = L"Normal Buffer";
 
-			normalBuffer = device->CreateBuffer(desc);
+			outMesh.normalBuffer = device->CreateBuffer(desc);
 
 			std::unique_ptr<D3D12Lite::BufferUpload> uploadBuffer = std::make_unique<D3D12Lite::BufferUpload>();
-			uploadBuffer->mBuffer = normalBuffer.get();
+			uploadBuffer->mBuffer = outMesh.normalBuffer.get();
 			uploadBuffer->mBufferData = std::make_unique<uint8_t[]>(sizeInBytes);
 			uploadBuffer->mBufferDataSize = sizeInBytes;
 
@@ -198,10 +200,10 @@ namespace Styx
 			desc.mIsRawAccess = true;
 			desc.mDebugName = L"Tangent Buffer";
 
-			tangentBuffer = device->CreateBuffer(desc);
+			outMesh.tangentBuffer = device->CreateBuffer(desc);
 
 			std::unique_ptr<D3D12Lite::BufferUpload> uploadBuffer = std::make_unique<D3D12Lite::BufferUpload>();
-			uploadBuffer->mBuffer = tangentBuffer.get();
+			uploadBuffer->mBuffer = outMesh.tangentBuffer.get();
 			uploadBuffer->mBufferData = std::make_unique<uint8_t[]>(sizeInBytes);
 			uploadBuffer->mBufferDataSize = sizeInBytes;
 
@@ -219,10 +221,10 @@ namespace Styx
 			desc.mIsRawAccess = true;
 			desc.mDebugName = L"UV Buffer";
 
-			uvBuffer = device->CreateBuffer(desc);
+			outMesh.uvBuffer = device->CreateBuffer(desc);
 
 			std::unique_ptr<D3D12Lite::BufferUpload> uploadBuffer = std::make_unique<D3D12Lite::BufferUpload>();
-			uploadBuffer->mBuffer = uvBuffer.get();
+			uploadBuffer->mBuffer = outMesh.uvBuffer.get();
 			uploadBuffer->mBufferData = std::make_unique<uint8_t[]>(sizeInBytes);
 			uploadBuffer->mBufferDataSize = sizeInBytes;
 
@@ -241,27 +243,29 @@ namespace Styx
 			desc.mFormat = DXGI_FORMAT_R32_UINT;
 			desc.mDebugName = L"Index Buffer";
 
-			indexBuffer = device->CreateBuffer(desc);
+			outMesh.indexBuffer = device->CreateBuffer(desc);
 
 			std::unique_ptr<D3D12Lite::BufferUpload> uploadBuffer = std::make_unique<D3D12Lite::BufferUpload>();
-			uploadBuffer->mBuffer = indexBuffer.get();
+			uploadBuffer->mBuffer = outMesh.indexBuffer.get();
 			uploadBuffer->mBufferData = std::make_unique<uint8_t[]>(sizeInBytes);
 			uploadBuffer->mBufferDataSize = sizeInBytes;
 
 			memcpy_s(uploadBuffer->mBufferData.get(), sizeInBytes, indices.data(), sizeInBytes);
 			device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
 		}
+
+		return outMesh;
 	}
 
 	void Model::Destroy(D3D12Lite::Device* device)
 	{
 		for (uint32_t i = 0; i < meshes.size(); i++)
 		{
-			device->DestroyBuffer(std::move(meshes[i]->positionBuffer));
-			device->DestroyBuffer(std::move(meshes[i]->normalBuffer));
-			device->DestroyBuffer(std::move(meshes[i]->tangentBuffer));
-			device->DestroyBuffer(std::move(meshes[i]->uvBuffer));
-			device->DestroyBuffer(std::move(meshes[i]->indexBuffer));
+			device->DestroyBuffer(std::move(meshes[i].positionBuffer));
+			device->DestroyBuffer(std::move(meshes[i].normalBuffer));
+			device->DestroyBuffer(std::move(meshes[i].tangentBuffer));
+			device->DestroyBuffer(std::move(meshes[i].uvBuffer));
+			device->DestroyBuffer(std::move(meshes[i].indexBuffer));
 		}
 
 		for (uint32_t i = 0; i < m_Children.size(); i++)

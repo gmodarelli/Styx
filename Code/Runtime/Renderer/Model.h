@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RendererTypes.h"
+
 #include <stdint.h>
 #include <memory>
 #include <vector>
@@ -19,33 +21,10 @@ struct aiScene;
 
 namespace Styx
 {
-	struct Transform
-	{
-		DirectX::XMFLOAT4X4 worldMatrix;
-	};
-
-	class Mesh
-	{
-	public:
-		Mesh(D3D12Lite::Device* device, aiMesh* mesh, const aiScene* scene);
-
-		char name[256];
-		uint32_t vertexCount;
-		uint32_t vertexOffset;
-		uint32_t indexCount;
-		uint32_t indexOffset;
-
-		std::unique_ptr<D3D12Lite::BufferResource> positionBuffer;
-		std::unique_ptr<D3D12Lite::BufferResource> normalBuffer;
-		std::unique_ptr<D3D12Lite::BufferResource> tangentBuffer;
-		std::unique_ptr<D3D12Lite::BufferResource> uvBuffer;
-		std::unique_ptr<D3D12Lite::BufferResource> indexBuffer;
-	};
-
 	struct Model
 	{
 		char name[256];
-		std::vector<std::unique_ptr<Mesh>> meshes;
+		std::vector<Mesh> meshes;
 		std::vector<Transform> transforms;
 
 		void Destroy(D3D12Lite::Device* device);
@@ -63,6 +42,9 @@ namespace Styx
 		void Shutdown();
 
 		void Render(D3D12Lite::GraphicsContext* gfx);
+
+	public:
+		static Mesh ProcessMesh(D3D12Lite::Device* device, aiMesh* mesh, const aiScene* scene);
 
 	private:
 		void DrawModel(D3D12Lite::GraphicsContext* gfx, Model* model);
