@@ -10,19 +10,17 @@
 
 namespace
 {
-	struct PassConstants
+	struct TerrainPassConstants
 	{
 		DirectX::XMFLOAT4X4 viewMatrix;
 		DirectX::XMFLOAT4X4 projectionMatrix;
 	};
 
-	struct ObjectConstants
+	struct TerrainObjectConstants
 	{
 		float worldMatrix[4][4];
 		uint32_t vertexOffset;
 		uint32_t positionBufferIndex;
-		uint32_t normalBufferIndex;
-		uint32_t tangentBufferIndex;
 		uint32_t uvBufferIndex;
 	};
 }
@@ -46,8 +44,6 @@ void Styx::TerrainRenderer::Shutdown()
 	}
 
 	m_Device->DestroyBuffer(std::move(m_Mesh.positionBuffer));
-	m_Device->DestroyBuffer(std::move(m_Mesh.normalBuffer));
-	m_Device->DestroyBuffer(std::move(m_Mesh.tangentBuffer));
 	m_Device->DestroyBuffer(std::move(m_Mesh.uvBuffer));
 	m_Device->DestroyBuffer(std::move(m_Mesh.indexBuffer));
 }
@@ -59,19 +55,17 @@ void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, Camera& came
 	pso.mRenderTargets.push_back(rt0);
 	pso.mDepthStencilTarget = depthBuffer;
 
-	PassConstants passConstants;
+	TerrainPassConstants passConstants;
 	DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, camera.view);
 	DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, camera.projection);
-	m_PassConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&passConstants, sizeof(PassConstants));
+	m_PassConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&passConstants, sizeof(TerrainPassConstants));
 
-	ObjectConstants objectConstants;
+	TerrainObjectConstants objectConstants;
 	memcpy_s(&objectConstants.worldMatrix, sizeof(float[4][4]), m_Transform.worldMatrix.m, sizeof(float[4][4]));
 	objectConstants.vertexOffset = m_Mesh.vertexOffset;
 	objectConstants.positionBufferIndex = m_Mesh.positionBuffer->mDescriptorHeapIndex;
-	objectConstants.normalBufferIndex = m_Mesh.normalBuffer->mDescriptorHeapIndex;
-	objectConstants.tangentBufferIndex = m_Mesh.tangentBuffer->mDescriptorHeapIndex;
 	objectConstants.uvBufferIndex = m_Mesh.uvBuffer->mDescriptorHeapIndex;
-	m_ObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(ObjectConstants));
+	m_ObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(TerrainObjectConstants));
 
 	gfx->SetPipeline(pso);
 	gfx->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, m_PerPassResourceSpace);
@@ -112,7 +106,7 @@ void Styx::TerrainRenderer::LoadResources()
 void Styx::TerrainRenderer::InitializePSOs()
 {
 	D3D12Lite::BufferCreationDesc passConstantBufferDesc{};
-	passConstantBufferDesc.mSize = sizeof(PassConstants);
+	passConstantBufferDesc.mSize = sizeof(TerrainPassConstants);
 	passConstantBufferDesc.mAccessFlags = D3D12Lite::BufferAccessFlags::hostWritable;
 	passConstantBufferDesc.mViewFlags = D3D12Lite::BufferViewFlags::cbv;
 	passConstantBufferDesc.mDebugName = L"TerrainRenderer::PassConstantBuffer";
@@ -123,7 +117,7 @@ void Styx::TerrainRenderer::InitializePSOs()
 	}
 
 	D3D12Lite::BufferCreationDesc objectConstantBufferDesc{};
-	objectConstantBufferDesc.mSize = sizeof(ObjectConstants);
+	objectConstantBufferDesc.mSize = sizeof(TerrainObjectConstants);
 	objectConstantBufferDesc.mAccessFlags = D3D12Lite::BufferAccessFlags::hostWritable;
 	objectConstantBufferDesc.mViewFlags = D3D12Lite::BufferViewFlags::cbv;
 	objectConstantBufferDesc.mDebugName = L"TerrainRenderer::ObjectConstantBuffer";

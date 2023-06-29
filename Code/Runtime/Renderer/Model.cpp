@@ -94,17 +94,15 @@ namespace Styx
 		Mesh outMesh;
 
 		assert(mesh->HasPositions());
-		assert(mesh->HasNormals());
-		assert(mesh->HasTangentsAndBitangents());
 		assert(mesh->HasTextureCoords(0));
 
 		memcpy_s(outMesh.name, 256, mesh->mName.C_Str(), mesh->mName.length);
 
+		std::vector<uint32_t> indices;
 		std::vector<float> positions;
 		std::vector<float> normals;
 		std::vector<float> tangents;
 		std::vector<float> uvs;
-		std::vector<uint32_t> indices;
 
 		outMesh.indexOffset = (uint32_t)indices.size();
 		outMesh.indexCount = 0;
@@ -117,13 +115,19 @@ namespace Styx
 			positions.push_back(mesh->mVertices[i].y);
 			positions.push_back(mesh->mVertices[i].z);
 
-			normals.push_back(mesh->mNormals[i].x);
-			normals.push_back(mesh->mNormals[i].y);
-			normals.push_back(mesh->mNormals[i].z);
+			if (mesh->HasNormals())
+			{
+				normals.push_back(mesh->mNormals[i].x);
+				normals.push_back(mesh->mNormals[i].y);
+				normals.push_back(mesh->mNormals[i].z);
+			}
 
-			tangents.push_back(mesh->mTangents[i].x);
-			tangents.push_back(mesh->mTangents[i].y);
-			tangents.push_back(mesh->mTangents[i].z);
+			if (mesh->HasNormals() && mesh->HasTangentsAndBitangents())
+			{
+				tangents.push_back(mesh->mTangents[i].x);
+				tangents.push_back(mesh->mTangents[i].y);
+				tangents.push_back(mesh->mTangents[i].z);
+			}
 
 			uvs.push_back(mesh->mTextureCoords[0][i].x);
 			uvs.push_back(mesh->mTextureCoords[0][i].y);
@@ -140,13 +144,21 @@ namespace Styx
 			}
 		}
 
-		assert(positions.size() > 0);
-		assert(normals.size() > 0);
-		assert(tangents.size() > 0);
-		assert(uvs.size() > 0);
-		assert(positions.size() == normals.size());
-		assert(positions.size() == tangents.size());
 		assert(indices.size() > 0);
+		assert(positions.size() > 0);
+		assert(uvs.size() > 0);
+
+		if (mesh->HasNormals())
+		{
+			assert(normals.size() > 0);
+			assert(positions.size() == normals.size());
+		}
+
+		if (mesh->HasNormals() && mesh->HasTangentsAndBitangents())
+		{
+			assert(tangents.size() > 0);
+			assert(positions.size() == tangents.size());
+		}
 
 		{
 			uint32_t sizeInBytes = static_cast<uint32_t>(positions.size() * sizeof(float));
@@ -169,6 +181,7 @@ namespace Styx
 			device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
 		}
 
+		if (mesh->HasNormals())
 		{
 			uint32_t sizeInBytes = static_cast<uint32_t>(normals.size() * sizeof(float));
 			D3D12Lite::BufferCreationDesc desc{};
@@ -190,6 +203,7 @@ namespace Styx
 			device->GetUploadContextForCurrentFrame().AddBufferUpload(std::move(uploadBuffer));
 		}
 
+		if (mesh->HasNormals() && mesh->HasTangentsAndBitangents())
 		{
 			uint32_t sizeInBytes = static_cast<uint32_t>(tangents.size() * sizeof(float));
 			D3D12Lite::BufferCreationDesc desc{};
