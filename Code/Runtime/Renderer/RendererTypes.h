@@ -3,9 +3,6 @@
 #include <DirectXMath.h>
 #include <memory>
 
-#define RAD_TO_DEG(rad) (rad * 180.0f / 3.14159265f)
-#define DEG_TO_RAD(deg) (deg * 3.14159265f / 180.0f)
-
 namespace D3D12Lite
 {
 	struct BufferResource;
@@ -22,8 +19,10 @@ namespace Styx
 		DirectX::XMVECTOR right = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 		DirectX::XMMATRIX transform;
 		DirectX::XMMATRIX view;
-		float yaw = DEG_TO_RAD(-40.0f);
-		float pitch = DEG_TO_RAD(35.0f);
+		// NOTE(gmodarelli): This is here temporarily
+		DirectX::XMMATRIX projection;
+		float yaw = DirectX::XMConvertToRadians(-40.0f);
+		float pitch = DirectX::XMConvertToRadians(35.0f);
 		float movementSpeed = 5.0f;
 	};
 

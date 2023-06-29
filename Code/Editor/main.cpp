@@ -37,17 +37,6 @@ using namespace Styx;
 // GPU resources
 DXGI_FORMAT g_depthFormat = DXGI_FORMAT_D32_FLOAT;
 std::unique_ptr<D3D12Lite::TextureResource> g_depthBuffer;
-std::array<std::unique_ptr<D3D12Lite::BufferResource>, D3D12Lite::NUM_FRAMES_IN_FLIGHT> g_passConstantBuffers;
-D3D12Lite::PipelineResourceSpace g_perPassResourceSpace;
-std::unique_ptr<D3D12Lite::Shader> g_vertexShader;
-std::unique_ptr<D3D12Lite::Shader> g_pixelShader;
-std::unique_ptr<D3D12Lite::PipelineStateObject> g_meshPreviewPSO;
-
-struct PassConstants
-{
-	DirectX::XMFLOAT4X4 viewMatrix;
-	DirectX::XMFLOAT4X4 projectionMatrix;
-};
 
 DirectX::XMVECTOR g_worldForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 DirectX::XMVECTOR g_worldRight = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
@@ -104,60 +93,10 @@ int main()
 		g_depthBuffer = device->CreateTexture(desc);
 	}
 
-	// Scene scene(device.get());
-	// scene.Initialize("Assets/Models/NewSponza_Main_glTF_002.gltf");
+	g_freeFlyCamera.projection = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.0f), screenSize.x / (float)screenSize.y, 0.01f, 1000.0f);
 
-	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.0f), screenSize.x / (float)screenSize.y, 0.01f, 1000.0f);
-
-	D3D12Lite::BufferCreationDesc passConstantBufferDesc{};
-	passConstantBufferDesc.mSize = sizeof(PassConstants);
-	passConstantBufferDesc.mAccessFlags = D3D12Lite::BufferAccessFlags::hostWritable;
-	passConstantBufferDesc.mViewFlags = D3D12Lite::BufferViewFlags::cbv;
-	passConstantBufferDesc.mDebugName = L"Pass Constant Buffer";
-
-	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
-	{
-		g_passConstantBuffers[i] = device->CreateBuffer(passConstantBufferDesc);
-	}
-
-	g_perPassResourceSpace.SetCBV(g_passConstantBuffers[0].get());
-	g_perPassResourceSpace.Lock();
-
-	// This needs to happen AFTER we create the global per pass resource space
 	TerrainRenderer terrainRenderer(device.get());
-	terrainRenderer.Initialize("Assets/Models/TerrainPlane_Simple.gltf", &g_perPassResourceSpace);
-
-	// Mesh Preview PSO
-	{
-		D3D12Lite::ShaderCreationDesc vsDesc{};
-		vsDesc.mShaderName = L"MeshPreview.hlsl";
-		vsDesc.mEntryPoint = L"VertexShader";
-		vsDesc.mType = D3D12Lite::ShaderType::vertex;
-
-		D3D12Lite::ShaderCreationDesc psDesc{};
-		psDesc.mShaderName = L"MeshPreview.hlsl";
-		psDesc.mEntryPoint = L"PixelShader";
-		psDesc.mType = D3D12Lite::ShaderType::pixel;
-
-		g_vertexShader = device->CreateShader(vsDesc);
-		g_pixelShader = device->CreateShader(psDesc);
-
-		D3D12Lite::GraphicsPipelineDesc psoDesc = D3D12Lite::GetDefaultGraphicsPipelineDesc();
-		psoDesc.mVertexShader = g_vertexShader.get();
-		psoDesc.mPixelShader = g_pixelShader.get();
-		psoDesc.mRenderTargetDesc.mNumRenderTargets = 1;
-		psoDesc.mRenderTargetDesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-		psoDesc.mDepthStencilDesc.DepthEnable = true;
-		psoDesc.mRenderTargetDesc.mDepthStencilFormat = g_depthFormat;
-		psoDesc.mDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-
-		D3D12Lite::PipelineResourceLayout resourceLayout;
-		resourceLayout.mSpaces[D3D12Lite::PER_PASS_SPACE] = &g_perPassResourceSpace;
-		// TODO: Make this a struct
-		resourceLayout.mNum32BitConstants = 16 + 5;
-
-		g_meshPreviewPSO = device->CreateGraphicsPipeline(psoDesc, resourceLayout);
-	}
+	terrainRenderer.Initialize();
 
 	// ImGUI
 	{
@@ -213,8 +152,8 @@ int main()
 				g_freeFlyCamera.yaw += mouseDeltaX * g_mouseSensitivity;
 				g_freeFlyCamera.pitch += mouseDeltaY * g_mouseSensitivity;
 
-				float minYawRad = DEG_TO_RAD(-80.0f);
-				float maxYawRad = DEG_TO_RAD(80.0f);
+				float minYawRad = DirectX::XMConvertToRadians(-80.0f);
+				float maxYawRad = DirectX::XMConvertToRadians(80.0f);
 				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch < minYawRad ? minYawRad : g_freeFlyCamera.pitch;
 				g_freeFlyCamera.pitch = g_freeFlyCamera.pitch > maxYawRad ? maxYawRad : g_freeFlyCamera.pitch;
 
@@ -292,11 +231,11 @@ int main()
 
 					// Yaw & Pitch
 					{
-						float yawDeg = RAD_TO_DEG(g_freeFlyCamera.yaw);
-						float pitchDeg = RAD_TO_DEG(g_freeFlyCamera.pitch);
+						float yawDeg = DirectX::XMConvertToDegrees(g_freeFlyCamera.yaw);
+						float pitchDeg = DirectX::XMConvertToDegrees(g_freeFlyCamera.pitch);
 						if (ImGui::InputFloat("Yaw", &yawDeg))
 						{
-							g_freeFlyCamera.yaw = DEG_TO_RAD(yawDeg);
+							g_freeFlyCamera.yaw = DirectX::XMConvertToRadians(yawDeg);
 						}
 
 						if (ImGui::InputFloat("Pitch", &pitchDeg))
@@ -304,7 +243,7 @@ int main()
 							pitchDeg = pitchDeg < -80.0f ? -80.0f : pitchDeg;
 							pitchDeg = pitchDeg > 80.0f ? 80.0f : pitchDeg;
 
-							g_freeFlyCamera.pitch = DEG_TO_RAD(pitchDeg);
+							g_freeFlyCamera.pitch = DirectX::XMConvertToRadians(pitchDeg);
 						}
 					}
 				}
@@ -325,23 +264,7 @@ int main()
 			graphicsContext->ClearRenderTarget(backBuffer, color);
 			graphicsContext->ClearDepthStencilTarget(*g_depthBuffer, 1.0f, 0);
 
-			PassConstants passConstants;
-			DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, g_freeFlyCamera.view);
-			DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, projectionMatrix);
-			g_passConstantBuffers[device->GetFrameId()]->SetMappedData(&passConstants, sizeof(PassConstants));
-
-			terrainRenderer.Render(graphicsContext.get(), &g_perPassResourceSpace, &backBuffer, g_depthBuffer.get());
-
-			// D3D12Lite::PipelineInfo pso;
-			// pso.mPipeline = g_meshPreviewPSO.get();
-			// pso.mRenderTargets.push_back(&backBuffer);
-			// pso.mDepthStencilTarget = g_depthBuffer.get();
-
-			// graphicsContext->SetPipeline(pso);
-			// graphicsContext->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, g_perPassResourceSpace);
-			// graphicsContext->SetDefaultViewPortAndScissor(device->GetScreenSize());
-
-			// scene.Render(graphicsContext.get());
+			terrainRenderer.Render(graphicsContext.get(), g_freeFlyCamera, &backBuffer, g_depthBuffer.get());
 
 			// ImGUI
 			{
@@ -371,15 +294,6 @@ int main()
 
 	// scene.Shutdown();
 	terrainRenderer.Shutdown();
-
-	device->DestroyPipelineStateObject(std::move(g_meshPreviewPSO));
-	device->DestroyShader(std::move(g_vertexShader));
-	device->DestroyShader(std::move(g_pixelShader));
-
-	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
-	{
-		device->DestroyBuffer(std::move(g_passConstantBuffers[i]));
-	}
 
 	device->DestroyTexture(std::move(g_depthBuffer));
 

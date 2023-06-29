@@ -1,7 +1,7 @@
 #include "Assets/Shaders/Common.hlsl"
 
 ConstantBuffer<PassConstants> PassConstantBuffer : register(b0, perPassSpace);
-ConstantBuffer<PerDrawConstants> DrawConstantBuffer : register(b1);
+ConstantBuffer<PerObjectConstants> ObjectConstantBuffer : register(b1);
 
 struct Interpolators
 {
@@ -13,17 +13,17 @@ struct Interpolators
 
 Interpolators VertexShader(uint vertexId : SV_VertexID)
 {
-	ByteAddressBuffer positionBuffer = ResourceDescriptorHeap[DrawConstantBuffer.positionBufferIndex];
-	ByteAddressBuffer normalBuffer = ResourceDescriptorHeap[DrawConstantBuffer.normalBufferIndex];
-	ByteAddressBuffer uvBuffer = ResourceDescriptorHeap[DrawConstantBuffer.uvBufferIndex];
+	ByteAddressBuffer positionBuffer = ResourceDescriptorHeap[ObjectConstantBuffer.positionBufferIndex];
+	ByteAddressBuffer normalBuffer = ResourceDescriptorHeap[ObjectConstantBuffer.normalBufferIndex];
+	ByteAddressBuffer uvBuffer = ResourceDescriptorHeap[ObjectConstantBuffer.uvBufferIndex];
 
-	uint vertexIndex = vertexId + DrawConstantBuffer.vertexOffset;
+	uint vertexIndex = vertexId + ObjectConstantBuffer.vertexOffset;
 	float3 position = positionBuffer.Load<float3>(vertexIndex * sizeof(float3));
 	float3 normal = normalBuffer.Load<float3>(vertexIndex * sizeof(float3));
 	float2 uv = uvBuffer.Load<float2>(vertexIndex * sizeof(float2));
 
 	Interpolators output;
-	output.positionWS = mul(DrawConstantBuffer.worldMatrix, float4(position, 1.0)).xyz;
+	output.positionWS = mul(ObjectConstantBuffer.worldMatrix, float4(position, 1.0)).xyz;
 	output.position = mul(PassConstantBuffer.viewMatrix, float4(output.positionWS, 1.0));
 	output.position = mul(PassConstantBuffer.projectionMatrix, output.position);
 	output.normal = normal;

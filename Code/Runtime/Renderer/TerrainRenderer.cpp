@@ -10,6 +10,12 @@
 
 namespace
 {
+	struct PassConstants
+	{
+		DirectX::XMFLOAT4X4 viewMatrix;
+		DirectX::XMFLOAT4X4 projectionMatrix;
+	};
+
 	struct ObjectConstants
 	{
 		float worldMatrix[4][4];
@@ -21,13 +27,70 @@ namespace
 	};
 }
 
-void Styx::TerrainRenderer::Initialize(const char* terrainPlanePath, D3D12Lite::PipelineResourceSpace* perPassResources)
+void Styx::TerrainRenderer::Initialize()
+{
+	LoadResources();
+	InitializePSOs();
+}
+
+void Styx::TerrainRenderer::Shutdown()
+{
+	m_Device->DestroyPipelineStateObject(std::move(m_TerrainPSO));
+	m_Device->DestroyShader(std::move(m_VertexShader));
+	m_Device->DestroyShader(std::move(m_PixelShader));
+
+	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
+	{
+		m_Device->DestroyBuffer(std::move(m_PassConstantBuffers[i]));
+		m_Device->DestroyBuffer(std::move(m_ObjectConstantBuffers[i]));
+	}
+
+	m_Device->DestroyBuffer(std::move(m_Mesh.positionBuffer));
+	m_Device->DestroyBuffer(std::move(m_Mesh.normalBuffer));
+	m_Device->DestroyBuffer(std::move(m_Mesh.tangentBuffer));
+	m_Device->DestroyBuffer(std::move(m_Mesh.uvBuffer));
+	m_Device->DestroyBuffer(std::move(m_Mesh.indexBuffer));
+}
+
+void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, Camera& camera, D3D12Lite::TextureResource* rt0, D3D12Lite::TextureResource* depthBuffer)
+{
+	D3D12Lite::PipelineInfo pso;
+	pso.mPipeline = m_TerrainPSO.get();
+	pso.mRenderTargets.push_back(rt0);
+	pso.mDepthStencilTarget = depthBuffer;
+
+	PassConstants passConstants;
+	DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, camera.view);
+	DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, camera.projection);
+	m_PassConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&passConstants, sizeof(PassConstants));
+
+	ObjectConstants objectConstants;
+	memcpy_s(&objectConstants.worldMatrix, sizeof(float[4][4]), m_Transform.worldMatrix.m, sizeof(float[4][4]));
+	objectConstants.vertexOffset = m_Mesh.vertexOffset;
+	objectConstants.positionBufferIndex = m_Mesh.positionBuffer->mDescriptorHeapIndex;
+	objectConstants.normalBufferIndex = m_Mesh.normalBuffer->mDescriptorHeapIndex;
+	objectConstants.tangentBufferIndex = m_Mesh.tangentBuffer->mDescriptorHeapIndex;
+	objectConstants.uvBufferIndex = m_Mesh.uvBuffer->mDescriptorHeapIndex;
+	m_ObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(ObjectConstants));
+
+	gfx->SetPipeline(pso);
+	gfx->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, m_PerPassResourceSpace);
+	gfx->SetPipelineResources(D3D12Lite::PER_OBJECT_SPACE, m_PerObjectResourceSpace);
+	gfx->SetDefaultViewPortAndScissor(m_Device->GetScreenSize());
+	gfx->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gfx->SetIndexBuffer(*m_Mesh.indexBuffer);
+
+	gfx->DrawIndexed(m_Mesh.indexCount, m_Mesh.indexOffset, 0);
+}
+
+void Styx::TerrainRenderer::LoadResources()
 {
 	Assimp::Importer importer;
+	const char* terrainPlanePath = "Assets/Models/TerrainPlane.gltf";
 	const aiScene* scene = importer.ReadFile(terrainPlanePath, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
-		printf("[TerrainRenderer::Initialize] Failed to load model at '%s'. Error: %s\n", terrainPlanePath, importer.GetErrorString());
+		printf("[TerrainRenderer::LoadResources] Failed to load model at '%s'. Error: %s\n", terrainPlanePath, importer.GetErrorString());
 		return;
 	}
 
@@ -43,6 +106,21 @@ void Styx::TerrainRenderer::Initialize(const char* terrainPlanePath, D3D12Lite::
 
 	aiMesh* mesh = scene->mMeshes[node->mMeshes[0]];
 	m_Mesh = Scene::ProcessMesh(m_Device, mesh, scene);
+
+}
+
+void Styx::TerrainRenderer::InitializePSOs()
+{
+	D3D12Lite::BufferCreationDesc passConstantBufferDesc{};
+	passConstantBufferDesc.mSize = sizeof(PassConstants);
+	passConstantBufferDesc.mAccessFlags = D3D12Lite::BufferAccessFlags::hostWritable;
+	passConstantBufferDesc.mViewFlags = D3D12Lite::BufferViewFlags::cbv;
+	passConstantBufferDesc.mDebugName = L"TerrainRenderer::PassConstantBuffer";
+
+	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
+	{
+		m_PassConstantBuffers[i] = m_Device->CreateBuffer(passConstantBufferDesc);
+	}
 
 	D3D12Lite::BufferCreationDesc objectConstantBufferDesc{};
 	objectConstantBufferDesc.mSize = sizeof(ObjectConstants);
@@ -77,56 +155,15 @@ void Styx::TerrainRenderer::Initialize(const char* terrainPlanePath, D3D12Lite::
 	psoDesc.mRenderTargetDesc.mDepthStencilFormat = DXGI_FORMAT_D32_FLOAT;
 	psoDesc.mDepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 
+	m_PerPassResourceSpace.SetCBV(m_PassConstantBuffers[0].get());
+	m_PerPassResourceSpace.Lock();
+
 	m_PerObjectResourceSpace.SetCBV(m_ObjectConstantBuffers[0].get());
 	m_PerObjectResourceSpace.Lock();
 
 	D3D12Lite::PipelineResourceLayout resourceLayout;
-	resourceLayout.mSpaces[D3D12Lite::PER_PASS_SPACE] = perPassResources;
+	resourceLayout.mSpaces[D3D12Lite::PER_PASS_SPACE] = &m_PerPassResourceSpace;
 	resourceLayout.mSpaces[D3D12Lite::PER_OBJECT_SPACE] = &m_PerObjectResourceSpace;
 
 	m_TerrainPSO = m_Device->CreateGraphicsPipeline(psoDesc, resourceLayout);
-}
-
-void Styx::TerrainRenderer::Shutdown()
-{
-	m_Device->DestroyPipelineStateObject(std::move(m_TerrainPSO));
-	m_Device->DestroyShader(std::move(m_VertexShader));
-	m_Device->DestroyShader(std::move(m_PixelShader));
-
-	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
-	{
-		m_Device->DestroyBuffer(std::move(m_ObjectConstantBuffers[i]));
-	}
-
-	m_Device->DestroyBuffer(std::move(m_Mesh.positionBuffer));
-	m_Device->DestroyBuffer(std::move(m_Mesh.normalBuffer));
-	m_Device->DestroyBuffer(std::move(m_Mesh.tangentBuffer));
-	m_Device->DestroyBuffer(std::move(m_Mesh.uvBuffer));
-	m_Device->DestroyBuffer(std::move(m_Mesh.indexBuffer));
-}
-
-void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, D3D12Lite::PipelineResourceSpace* passResources, D3D12Lite::TextureResource* rt0, D3D12Lite::TextureResource* depthBuffer)
-{
-	D3D12Lite::PipelineInfo pso;
-	pso.mPipeline = m_TerrainPSO.get();
-	pso.mRenderTargets.push_back(rt0);
-	pso.mDepthStencilTarget = depthBuffer;
-
-	ObjectConstants objectConstants;
-	memcpy_s(&objectConstants.worldMatrix, sizeof(float[4][4]), m_Transform.worldMatrix.m, sizeof(float[4][4]));
-	objectConstants.vertexOffset = m_Mesh.vertexOffset;
-	objectConstants.positionBufferIndex = m_Mesh.positionBuffer->mDescriptorHeapIndex;
-	objectConstants.normalBufferIndex = m_Mesh.normalBuffer->mDescriptorHeapIndex;
-	objectConstants.tangentBufferIndex = m_Mesh.tangentBuffer->mDescriptorHeapIndex;
-	objectConstants.uvBufferIndex = m_Mesh.uvBuffer->mDescriptorHeapIndex;
-	m_ObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(ObjectConstants));
-
-	gfx->SetPipeline(pso);
-	gfx->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, *passResources);
-	gfx->SetPipelineResources(D3D12Lite::PER_OBJECT_SPACE, m_PerObjectResourceSpace);
-	gfx->SetDefaultViewPortAndScissor(m_Device->GetScreenSize());
-	gfx->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gfx->SetIndexBuffer(*m_Mesh.indexBuffer);
-
-	gfx->DrawIndexed(m_Mesh.indexCount, m_Mesh.indexOffset, 0);
 }

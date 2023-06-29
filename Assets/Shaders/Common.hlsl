@@ -15,13 +15,14 @@
 #define pointClampSampler	4
 #define pointWrapSampler	5
 
+// NOTE: These are not common to all passes/objects, they need to be moved to their respective shaders
 struct PassConstants
 {
 	float4x4 viewMatrix;
 	float4x4 projectionMatrix;
 };
 
-struct PerDrawConstants
+struct PerObjectConstants
 {
 	float4x4 worldMatrix;
 	uint vertexOffset;
