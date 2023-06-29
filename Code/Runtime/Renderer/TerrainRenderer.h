@@ -37,5 +37,8 @@ namespace Styx
 		std::unique_ptr<D3D12Lite::Shader> m_VertexShader;
 		std::unique_ptr<D3D12Lite::Shader> m_PixelShader;
 		std::unique_ptr<D3D12Lite::PipelineStateObject> m_TerrainPSO;
+
+		std::unique_ptr<D3D12Lite::Shader> m_HeightfieldNoiseShader;
+		std::unique_ptr<D3D12Lite::TextureResource> m_HeightfieldTexture;
 	};
 }

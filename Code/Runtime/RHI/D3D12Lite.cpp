@@ -1762,7 +1762,10 @@ namespace D3D12Lite
         arguments.push_back(L"-T");
         arguments.push_back(target);
         arguments.push_back(L"-Zi");
-        arguments.push_back(L"-WX");
+        // NOTE: We temporarily need to remove "warnings as errors" and to
+        // suppress warnings otherwise FastNoiseLite won't compile 
+        // arguments.push_back(L"-WX");
+        arguments.push_back(L"-no-warnings");
         arguments.push_back(L"-Qstrip_reflect");
 
         IDxcResult* compilationResults = nullptr;

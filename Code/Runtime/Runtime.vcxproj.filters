@@ -132,5 +132,11 @@
     <FxCompile Include="..\..\Assets\Shaders\Terrain.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="..\..\Assets\Shaders\HeightfieldNoise.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\Assets\Shaders\FastNoiseLite.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -46,6 +46,9 @@ void Styx::TerrainRenderer::Shutdown()
 	m_Device->DestroyBuffer(std::move(m_Mesh.positionBuffer));
 	m_Device->DestroyBuffer(std::move(m_Mesh.uvBuffer));
 	m_Device->DestroyBuffer(std::move(m_Mesh.indexBuffer));
+
+	m_Device->DestroyShader(std::move(m_HeightfieldNoiseShader));
+	m_Device->DestroyTexture(std::move(m_HeightfieldTexture));
 }
 
 void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, Camera& camera, D3D12Lite::TextureResource* rt0, D3D12Lite::TextureResource* depthBuffer)
@@ -160,4 +163,19 @@ void Styx::TerrainRenderer::InitializePSOs()
 	resourceLayout.mSpaces[D3D12Lite::PER_OBJECT_SPACE] = &m_PerObjectResourceSpace;
 
 	m_TerrainPSO = m_Device->CreateGraphicsPipeline(psoDesc, resourceLayout);
+
+	D3D12Lite::TextureCreationDesc heightfieldCreationDesc{};
+	heightfieldCreationDesc.mResourceDesc.Format = DXGI_FORMAT_R16_UNORM;
+	heightfieldCreationDesc.mResourceDesc.Width = 513;
+	heightfieldCreationDesc.mResourceDesc.Height = 513;
+	heightfieldCreationDesc.mResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	heightfieldCreationDesc.mViewFlags = D3D12Lite::TextureViewFlags::uav | D3D12Lite::TextureViewFlags::srv;
+	m_HeightfieldTexture = m_Device->CreateTexture(heightfieldCreationDesc);
+
+	D3D12Lite::ShaderCreationDesc csDesc{};
+	csDesc.mShaderName = L"HeightfieldNoise.hlsl";
+	csDesc.mEntryPoint = L"HeightfieldNoise";
+	csDesc.mType = D3D12Lite::ShaderType::compute;
+
+	m_HeightfieldNoiseShader = m_Device->CreateShader(csDesc);
 }
