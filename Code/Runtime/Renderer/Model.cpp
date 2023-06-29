@@ -18,20 +18,46 @@ namespace Styx
 			return;
 		}
 
-		ProcessNode(scene->mRootNode, scene);
+		ProcessNode(scene->mRootNode, scene, nullptr);
 	}
 
 	void Scene::Shutdown()
 	{
-		for (uint32_t modelIndex = 0; modelIndex < m_Models.size(); modelIndex++)
+		m_Root->Destroy(m_Device);
+	}
+
+	void Scene::Render(D3D12Lite::GraphicsContext* gfx)
+	{
+		DrawModel(gfx, m_Root);
+	}
+
+	void Scene::DrawModel(D3D12Lite::GraphicsContext* gfx, Model* model)
+	{
+		for (uint32_t i = 0; i < model->meshes.size(); i++)
 		{
-			m_Models[modelIndex]->Destroy(m_Device);
+			gfx->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			gfx->SetIndexBuffer(*model->meshes[i]->indexBuffer);
+
+			gfx->SetPipeline32BitConstants(1, 16, model->transforms[i].worldMatrix.m, 0);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i]->vertexOffset, 16);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i]->positionBuffer->mDescriptorHeapIndex, 17);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i]->normalBuffer->mDescriptorHeapIndex, 18);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i]->tangentBuffer->mDescriptorHeapIndex, 19);
+			gfx->SetPipeline32BitConstant(1, model->meshes[i]->uvBuffer->mDescriptorHeapIndex, 20);
+
+			gfx->DrawIndexed(model->meshes[i]->indexCount, model->meshes[i]->indexOffset, 0);
+		}
+
+		for (uint32_t i = 0; i < model->m_Children.size(); i++)
+		{
+			DrawModel(gfx, model->m_Children[i]);
 		}
 	}
 
-	void Scene::ProcessNode(aiNode* node, const aiScene* scene)
+	void Scene::ProcessNode(aiNode* node, const aiScene* scene, Model* parent)
 	{
-		std::unique_ptr<Model> model = std::make_unique<Model>();
+		Model* model = new Model();
+		memcpy_s(model->name, 256, node->mName.C_Str(), node->mName.length);
 
 		for (uint32_t i = 0; i < node->mNumMeshes; i++)
 		{
@@ -49,11 +75,17 @@ namespace Styx
 			model->meshes.push_back(std::make_unique<Mesh>(m_Device, mesh, scene));
 		}
 
-		m_Models.push_back(std::move(model));
+		if (parent == nullptr)
+			m_Root = model;
+		else
+			m_Root->m_Children.push_back(model);
 
 		for (uint32_t i = 0; i < node->mNumChildren; i++)
 		{
-			ProcessNode(node->mChildren[i], scene);
+			if (parent == nullptr)
+				ProcessNode(node->mChildren[i], scene, m_Root);
+			else
+				ProcessNode(node->mChildren[i], scene, model);
 		}
 	}
 
@@ -63,6 +95,8 @@ namespace Styx
 		assert(mesh->HasNormals());
 		assert(mesh->HasTangentsAndBitangents());
 		assert(mesh->HasTextureCoords(0));
+
+		memcpy_s(name, 256, mesh->mName.C_Str(), mesh->mName.length);
 
 		std::vector<float> positions;
 		std::vector<float> normals;
@@ -228,6 +262,11 @@ namespace Styx
 			device->DestroyBuffer(std::move(meshes[i]->tangentBuffer));
 			device->DestroyBuffer(std::move(meshes[i]->uvBuffer));
 			device->DestroyBuffer(std::move(meshes[i]->indexBuffer));
+		}
+
+		for (uint32_t i = 0; i < m_Children.size(); i++)
+		{
+			m_Children[i]->Destroy(device);
 		}
 	}
 }

@@ -75,6 +75,28 @@ float g_inputForwardAxis = 0.0f;
 float g_inputRightAxis = 0.0f;
 float g_inputUpAxis = 0.0f;
 
+void ImGuiHierarchyForModel(Model* model, bool first)
+{
+
+	if (first)
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+
+	if (ImGui::TreeNode(model->name))
+	{
+		for (uint32_t i = 0; i < model->meshes.size(); i++)
+		{
+			ImGui::Text(model->meshes[i]->name);
+		}
+
+		for (uint32_t i = 0; i < model->m_Children.size(); i++)
+		{
+			ImGuiHierarchyForModel(model->m_Children[i], false);
+		}
+
+		ImGui::TreePop();
+	}
+}
+
 // NOTE(gmodarelli): This is all temporary test code to test the current WIP implementation
 // of the RHI
 int main()
@@ -234,12 +256,12 @@ int main()
 				// Q
 				if (Window::GetKey(0))
 				{
-					g_inputUpAxis += movememntSpeed * deltaTime;
+					g_inputUpAxis -= movememntSpeed * deltaTime;
 				}
 				// E
 				if (Window::GetKey(2))
 				{
-					g_inputUpAxis -= movememntSpeed * deltaTime;
+					g_inputUpAxis += movememntSpeed * deltaTime;
 				}
 			}
 
@@ -256,7 +278,12 @@ int main()
 				ImGui_ImplDX12_NewFrame();
 				ImGui::NewFrame();
 
-				ImGui::ShowDemoWindow();
+				ImGui::Begin("Hierarchy");
+				{
+					ImGuiHierarchyForModel(scene.m_Root, true);
+				}
+				ImGui::End();
+
 				ImGui::Render();
 			}
 
@@ -286,29 +313,7 @@ int main()
 			graphicsContext->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, g_perPassResourceSpace);
 			graphicsContext->SetDefaultViewPortAndScissor(device->GetScreenSize());
 
-			for (uint32_t modelIndex = 0; modelIndex < scene.m_Models.size(); modelIndex++)
-			{
-				for (uint32_t i = 0; i < scene.m_Models[modelIndex]->meshes.size(); i++)
-				{
-					Mesh* mesh = scene.m_Models[modelIndex]->meshes[i].get();
-					Transform& transform = scene.m_Models[modelIndex]->transforms[i];
-
-					if (mesh->positionBuffer->mIsReady && mesh->normalBuffer->mIsReady && mesh->uvBuffer->mIsReady && mesh->indexBuffer->mIsReady)
-					{
-						graphicsContext->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-						graphicsContext->SetIndexBuffer(*mesh->indexBuffer);
-
-						graphicsContext->SetPipeline32BitConstants(1, 16, transform.worldMatrix.m, 0);
-						graphicsContext->SetPipeline32BitConstant(1, mesh->vertexOffset, 16);
-						graphicsContext->SetPipeline32BitConstant(1, mesh->positionBuffer->mDescriptorHeapIndex, 17);
-						graphicsContext->SetPipeline32BitConstant(1, mesh->normalBuffer->mDescriptorHeapIndex, 18);
-						graphicsContext->SetPipeline32BitConstant(1, mesh->tangentBuffer->mDescriptorHeapIndex, 19);
-						graphicsContext->SetPipeline32BitConstant(1, mesh->uvBuffer->mDescriptorHeapIndex, 20);
-
-						graphicsContext->DrawIndexed(mesh->indexCount, mesh->indexOffset, 0);
-					}
-				}
-			}
+			scene.Render(graphicsContext.get());
 
 			// ImGUI
 			{

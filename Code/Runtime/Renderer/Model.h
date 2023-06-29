@@ -10,6 +10,7 @@ namespace D3D12Lite
 {
 	class Device;
 	struct BufferResource;
+	class GraphicsContext;
 }
 
 struct aiMesh;
@@ -28,6 +29,7 @@ namespace Styx
 	public:
 		Mesh(D3D12Lite::Device* device, aiMesh* mesh, const aiScene* scene);
 
+		char name[256];
 		uint32_t vertexCount;
 		uint32_t vertexOffset;
 		uint32_t indexCount;
@@ -42,26 +44,32 @@ namespace Styx
 
 	struct Model
 	{
+		char name[256];
 		std::vector<std::unique_ptr<Mesh>> meshes;
 		std::vector<Transform> transforms;
 
 		void Destroy(D3D12Lite::Device* device);
+
+		std::vector<Model*> m_Children;
 	};
 
 	class Scene
 	{
 	public:
-		Scene(D3D12Lite::Device* device) : m_Device(device) {};
+		Scene(D3D12Lite::Device* device) : m_Device(device), m_Root(nullptr) {};
 		~Scene() = default;
 
 		void Initialize(const char* path);
 		void Shutdown();
 
+		void Render(D3D12Lite::GraphicsContext* gfx);
+
 	private:
-		void ProcessNode(aiNode* node, const aiScene* scene);
+		void DrawModel(D3D12Lite::GraphicsContext* gfx, Model* model);
+		void ProcessNode(aiNode* node, const aiScene* scene, Model* parent);
 
 	public:
-		std::vector<std::unique_ptr<Model>> m_Models;
+		Model* m_Root;
 
 	private:
 		D3D12Lite::Device* m_Device;
