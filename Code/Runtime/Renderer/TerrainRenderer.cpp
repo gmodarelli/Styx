@@ -23,6 +23,20 @@ namespace
 		uint32_t positionBufferIndex;
 		uint32_t uvBufferIndex;
 	};
+
+	struct TerrainMaterialConstants
+	{
+		uint32_t heightmapIndex;
+		float terrainTileSize;
+		float terrainHeight;
+	};
+
+	struct HeightfieldNoiseObjectConstants
+	{
+		uint32_t heightfieldNoiseTextureWidth;
+		uint32_t heightfieldNoiseTextureHeight;
+		uint32_t heightfieldNoiseTextureIndex;
+	};
 }
 
 void Styx::TerrainRenderer::Initialize()
@@ -41,43 +55,95 @@ void Styx::TerrainRenderer::Shutdown()
 	{
 		m_Device->DestroyBuffer(std::move(m_PassConstantBuffers[i]));
 		m_Device->DestroyBuffer(std::move(m_ObjectConstantBuffers[i]));
+		m_Device->DestroyBuffer(std::move(m_MaterialConstantBuffers[i]));
+		m_Device->DestroyBuffer(std::move(m_HeightfieldNoiseObjectConstantBuffers[i]));
 	}
 
 	m_Device->DestroyBuffer(std::move(m_Mesh.positionBuffer));
 	m_Device->DestroyBuffer(std::move(m_Mesh.uvBuffer));
 	m_Device->DestroyBuffer(std::move(m_Mesh.indexBuffer));
 
+	m_Device->DestroyPipelineStateObject(std::move(m_HeightfieldNoisePSO));
 	m_Device->DestroyShader(std::move(m_HeightfieldNoiseShader));
 	m_Device->DestroyTexture(std::move(m_HeightfieldTexture));
 }
 
-void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, Camera& camera, D3D12Lite::TextureResource* rt0, D3D12Lite::TextureResource* depthBuffer)
+void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, D3D12Lite::ComputeContext* compute, Camera& camera, D3D12Lite::TextureResource* rt0, D3D12Lite::TextureResource* depthBuffer)
 {
-	D3D12Lite::PipelineInfo pso;
-	pso.mPipeline = m_TerrainPSO.get();
-	pso.mRenderTargets.push_back(rt0);
-	pso.mDepthStencilTarget = depthBuffer;
+	// Render the heightfield noise
+	{
+		D3D12Lite::PipelineInfo pso;
+		pso.mPipeline = m_HeightfieldNoisePSO.get();
 
-	TerrainPassConstants passConstants;
-	DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, camera.view);
-	DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, camera.projection);
-	m_PassConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&passConstants, sizeof(TerrainPassConstants));
+		HeightfieldNoiseObjectConstants objectConstants;
+		objectConstants.heightfieldNoiseTextureIndex = m_HeightfieldTexture->mDescriptorHeapIndex;
+		objectConstants.heightfieldNoiseTextureWidth = 513;
+		objectConstants.heightfieldNoiseTextureHeight = 513;
+		m_HeightfieldNoiseObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(HeightfieldNoiseObjectConstants));
 
-	TerrainObjectConstants objectConstants;
-	memcpy_s(&objectConstants.worldMatrix, sizeof(float[4][4]), m_Transform.worldMatrix.m, sizeof(float[4][4]));
-	objectConstants.vertexOffset = m_Mesh.vertexOffset;
-	objectConstants.positionBufferIndex = m_Mesh.positionBuffer->mDescriptorHeapIndex;
-	objectConstants.uvBufferIndex = m_Mesh.uvBuffer->mDescriptorHeapIndex;
-	m_ObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(TerrainObjectConstants));
+		compute->Reset();
+		compute->AddBarrier(*m_HeightfieldTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		compute->FlushBarriers();
 
-	gfx->SetPipeline(pso);
-	gfx->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, m_PerPassResourceSpace);
-	gfx->SetPipelineResources(D3D12Lite::PER_OBJECT_SPACE, m_PerObjectResourceSpace);
-	gfx->SetDefaultViewPortAndScissor(m_Device->GetScreenSize());
-	gfx->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gfx->SetIndexBuffer(*m_Mesh.indexBuffer);
+		compute->SetPipeline(pso);
+		compute->SetPipelineResources(D3D12Lite::PER_OBJECT_SPACE, m_HeightfieldNoisePerObjectResourceSpace);
+		compute->Dispatch((513 / 8) + 1, (513 / 8) + 1, 1);
 
-	gfx->DrawIndexed(m_Mesh.indexCount, m_Mesh.indexOffset, 0);
+		compute->AddBarrier(*m_HeightfieldTexture.get(), D3D12_RESOURCE_STATE_COMMON);
+		compute->FlushBarriers();
+
+		m_Device->SubmitContextWork(*compute);
+	}
+
+	// Render the terrain
+	{
+		D3D12Lite::PipelineInfo pso;
+		pso.mPipeline = m_TerrainPSO.get();
+		pso.mRenderTargets.push_back(rt0);
+		pso.mDepthStencilTarget = depthBuffer;
+
+		TerrainPassConstants passConstants;
+		DirectX::XMStoreFloat4x4(&passConstants.viewMatrix, camera.view);
+		DirectX::XMStoreFloat4x4(&passConstants.projectionMatrix, camera.projection);
+		m_PassConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&passConstants, sizeof(TerrainPassConstants));
+
+		TerrainObjectConstants objectConstants;
+		memcpy_s(&objectConstants.worldMatrix, sizeof(float[4][4]), m_Transform.worldMatrix.m, sizeof(float[4][4]));
+		objectConstants.vertexOffset = m_Mesh.vertexOffset;
+		objectConstants.positionBufferIndex = m_Mesh.positionBuffer->mDescriptorHeapIndex;
+		objectConstants.uvBufferIndex = m_Mesh.uvBuffer->mDescriptorHeapIndex;
+		m_ObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(TerrainObjectConstants));
+
+		TerrainMaterialConstants materialConstants;
+		materialConstants.heightmapIndex = m_HeightfieldTexture->mDescriptorHeapIndex;
+		materialConstants.terrainTileSize = 100.0f;
+		materialConstants.terrainHeight = 5.0f;
+		m_MaterialConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&materialConstants, sizeof(TerrainMaterialConstants));
+
+		gfx->Reset();
+
+		gfx->AddBarrier(*m_HeightfieldTexture.get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+		gfx->AddBarrier(*rt0, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		gfx->AddBarrier(*depthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		gfx->FlushBarriers();
+
+		float color[4] = {0.3f, 0.3f, 0.3f, 1.0f};
+		gfx->ClearRenderTarget(*rt0, color);
+		gfx->ClearDepthStencilTarget(*depthBuffer, 1.0f, 0);
+
+		gfx->SetPipeline(pso);
+		gfx->SetPipelineResources(D3D12Lite::PER_PASS_SPACE, m_PerPassResourceSpace);
+		gfx->SetPipelineResources(D3D12Lite::PER_OBJECT_SPACE, m_PerObjectResourceSpace);
+		gfx->SetPipelineResources(D3D12Lite::PER_MATERIAL_SPACE, m_PerMaterialResourceSpace);
+		gfx->SetDefaultViewPortAndScissor(m_Device->GetScreenSize());
+		gfx->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		gfx->SetIndexBuffer(*m_Mesh.indexBuffer);
+
+		gfx->DrawIndexed(m_Mesh.indexCount, m_Mesh.indexOffset, 0);
+
+		gfx->AddBarrier(*m_HeightfieldTexture.get(), D3D12_RESOURCE_STATE_COMMON);
+		gfx->FlushBarriers();
+	}
 }
 
 void Styx::TerrainRenderer::LoadResources()
@@ -130,6 +196,17 @@ void Styx::TerrainRenderer::InitializePSOs()
 		m_ObjectConstantBuffers[i] = m_Device->CreateBuffer(objectConstantBufferDesc);
 	}
 
+	D3D12Lite::BufferCreationDesc materialConstantBufferDesc{};
+	materialConstantBufferDesc.mSize = sizeof(TerrainMaterialConstants);
+	materialConstantBufferDesc.mAccessFlags = D3D12Lite::BufferAccessFlags::hostWritable;
+	materialConstantBufferDesc.mViewFlags = D3D12Lite::BufferViewFlags::cbv;
+	materialConstantBufferDesc.mDebugName = L"TerrainRenderer::MaterialConstantBuffer";
+
+	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
+	{
+		m_MaterialConstantBuffers[i] = m_Device->CreateBuffer(materialConstantBufferDesc);
+	}
+
 	D3D12Lite::ShaderCreationDesc vsDesc{};
 	vsDesc.mShaderName = L"Terrain.hlsl";
 	vsDesc.mEntryPoint = L"VertexShader";
@@ -158,9 +235,13 @@ void Styx::TerrainRenderer::InitializePSOs()
 	m_PerObjectResourceSpace.SetCBV(m_ObjectConstantBuffers[0].get());
 	m_PerObjectResourceSpace.Lock();
 
+	m_PerMaterialResourceSpace.SetCBV(m_MaterialConstantBuffers[0].get());
+	m_PerMaterialResourceSpace.Lock();
+
 	D3D12Lite::PipelineResourceLayout resourceLayout;
 	resourceLayout.mSpaces[D3D12Lite::PER_PASS_SPACE] = &m_PerPassResourceSpace;
 	resourceLayout.mSpaces[D3D12Lite::PER_OBJECT_SPACE] = &m_PerObjectResourceSpace;
+	resourceLayout.mSpaces[D3D12Lite::PER_MATERIAL_SPACE] = &m_PerMaterialResourceSpace;
 
 	m_TerrainPSO = m_Device->CreateGraphicsPipeline(psoDesc, resourceLayout);
 
@@ -178,4 +259,25 @@ void Styx::TerrainRenderer::InitializePSOs()
 	csDesc.mType = D3D12Lite::ShaderType::compute;
 
 	m_HeightfieldNoiseShader = m_Device->CreateShader(csDesc);
+
+	D3D12Lite::BufferCreationDesc heightfieldNoiseObjectConstantBufferDesc{};
+	heightfieldNoiseObjectConstantBufferDesc.mSize = sizeof(HeightfieldNoiseObjectConstants);
+	heightfieldNoiseObjectConstantBufferDesc.mAccessFlags = D3D12Lite::BufferAccessFlags::hostWritable;
+	heightfieldNoiseObjectConstantBufferDesc.mViewFlags = D3D12Lite::BufferViewFlags::cbv;
+	heightfieldNoiseObjectConstantBufferDesc.mDebugName = L"TerrainRenderer::HeightfieldNoiseObjectConstantBuffer";
+
+	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
+	{
+		m_HeightfieldNoiseObjectConstantBuffers[i] = m_Device->CreateBuffer(heightfieldNoiseObjectConstantBufferDesc);
+	}
+
+	D3D12Lite::ComputePipelineDesc cPsoDesc = { m_HeightfieldNoiseShader.get()};
+
+	D3D12Lite::PipelineResourceLayout computeResourceLayout;
+	computeResourceLayout.mSpaces[D3D12Lite::PER_OBJECT_SPACE] = &m_HeightfieldNoisePerObjectResourceSpace;
+
+	m_HeightfieldNoisePerObjectResourceSpace.SetCBV(m_HeightfieldNoiseObjectConstantBuffers[0].get());
+	m_HeightfieldNoisePerObjectResourceSpace.Lock();
+
+	m_HeightfieldNoisePSO = m_Device->CreateComputePipeline(cPsoDesc, computeResourceLayout);
 }

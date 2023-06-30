@@ -81,6 +81,7 @@ int main()
 	D3D12Lite::Uint2 screenSize(Window::GetWidth(), Window::GetHeight());
 	std::unique_ptr<D3D12Lite::Device> device = std::make_unique<D3D12Lite::Device>(Window::GetWindowHandle(), screenSize);
 	std::unique_ptr<D3D12Lite::GraphicsContext> graphicsContext = device->CreateGraphicsContext();
+	std::unique_ptr<D3D12Lite::ComputeContext> computeContext = device->CreateComputeContext();
 
 	// Create the depth buffer
 	{
@@ -254,17 +255,7 @@ int main()
 
 			D3D12Lite::TextureResource& backBuffer = device->GetCurrentBackBuffer();
 
-			graphicsContext->Reset();
-
-			graphicsContext->AddBarrier(backBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			graphicsContext->AddBarrier(*g_depthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-			graphicsContext->FlushBarriers();
-
-			float color[4] = {0.3f, 0.3f, 0.3f, 1.0f};
-			graphicsContext->ClearRenderTarget(backBuffer, color);
-			graphicsContext->ClearDepthStencilTarget(*g_depthBuffer, 1.0f, 0);
-
-			terrainRenderer.Render(graphicsContext.get(), g_freeFlyCamera, &backBuffer, g_depthBuffer.get());
+			terrainRenderer.Render(graphicsContext.get(), computeContext.get(), g_freeFlyCamera, &backBuffer, g_depthBuffer.get());
 
 			// ImGUI
 			{
@@ -298,6 +289,7 @@ int main()
 	device->DestroyTexture(std::move(g_depthBuffer));
 
 	device->DestroyContext(std::move(graphicsContext));
+	device->DestroyContext(std::move(computeContext));
 	device = nullptr;
 
 	Window::Shutdown();

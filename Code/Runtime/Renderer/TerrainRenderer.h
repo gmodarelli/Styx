@@ -18,7 +18,7 @@ namespace Styx
 		void Initialize();
 		void Shutdown();
 
-		void Render(D3D12Lite::GraphicsContext* gfx, Camera& camera, D3D12Lite::TextureResource* rt0, D3D12Lite::TextureResource* depthBuffer);
+		void Render(D3D12Lite::GraphicsContext* gfx, D3D12Lite::ComputeContext* compute, Camera& camera, D3D12Lite::TextureResource* rt0, D3D12Lite::TextureResource* depthBuffer);
 
 	private:
 		void LoadResources();
@@ -32,13 +32,18 @@ namespace Styx
 
 		std::array<std::unique_ptr<D3D12Lite::BufferResource>, D3D12Lite::NUM_FRAMES_IN_FLIGHT> m_PassConstantBuffers;
 		std::array<std::unique_ptr<D3D12Lite::BufferResource>, D3D12Lite::NUM_FRAMES_IN_FLIGHT> m_ObjectConstantBuffers;
+		std::array<std::unique_ptr<D3D12Lite::BufferResource>, D3D12Lite::NUM_FRAMES_IN_FLIGHT> m_MaterialConstantBuffers;
 		D3D12Lite::PipelineResourceSpace m_PerPassResourceSpace;
 		D3D12Lite::PipelineResourceSpace m_PerObjectResourceSpace;
+		D3D12Lite::PipelineResourceSpace m_PerMaterialResourceSpace;
 		std::unique_ptr<D3D12Lite::Shader> m_VertexShader;
 		std::unique_ptr<D3D12Lite::Shader> m_PixelShader;
 		std::unique_ptr<D3D12Lite::PipelineStateObject> m_TerrainPSO;
 
 		std::unique_ptr<D3D12Lite::Shader> m_HeightfieldNoiseShader;
+		std::unique_ptr<D3D12Lite::PipelineStateObject> m_HeightfieldNoisePSO;
+		std::array<std::unique_ptr<D3D12Lite::BufferResource>, D3D12Lite::NUM_FRAMES_IN_FLIGHT> m_HeightfieldNoiseObjectConstantBuffers;
+		D3D12Lite::PipelineResourceSpace m_HeightfieldNoisePerObjectResourceSpace;
 		std::unique_ptr<D3D12Lite::TextureResource> m_HeightfieldTexture;
 	};
 }
