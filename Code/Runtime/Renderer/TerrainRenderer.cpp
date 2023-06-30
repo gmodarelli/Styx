@@ -7,6 +7,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <cassert>
+#include <imgui/imgui.h>
 
 namespace
 {
@@ -57,6 +58,7 @@ void Styx::TerrainRenderer::Shutdown()
 		m_Device->DestroyBuffer(std::move(m_ObjectConstantBuffers[i]));
 		m_Device->DestroyBuffer(std::move(m_MaterialConstantBuffers[i]));
 		m_Device->DestroyBuffer(std::move(m_HeightfieldNoiseObjectConstantBuffers[i]));
+		m_Device->DestroyBuffer(std::move(m_HeightfieldNoiseMaterialConstantBuffers[i]));
 	}
 
 	m_Device->DestroyBuffer(std::move(m_Mesh.positionBuffer));
@@ -81,12 +83,15 @@ void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, D3D12Lite::C
 		objectConstants.heightfieldNoiseTextureHeight = 513;
 		m_HeightfieldNoiseObjectConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&objectConstants, sizeof(HeightfieldNoiseObjectConstants));
 
+		m_HeightfieldNoiseMaterialConstantBuffers[m_Device->GetFrameId()]->SetMappedData(&m_MaterialConstants, sizeof(HeightfieldNoiseMaterialConstants));
+
 		compute->Reset();
 		compute->AddBarrier(*m_HeightfieldTexture.get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		compute->FlushBarriers();
 
 		compute->SetPipeline(pso);
 		compute->SetPipelineResources(D3D12Lite::PER_OBJECT_SPACE, m_HeightfieldNoisePerObjectResourceSpace);
+		compute->SetPipelineResources(D3D12Lite::PER_MATERIAL_SPACE, m_HeightfieldNoisePerMaterialResourceSpace);
 		compute->Dispatch((513 / 8) + 1, (513 / 8) + 1, 1);
 
 		compute->AddBarrier(*m_HeightfieldTexture.get(), D3D12_RESOURCE_STATE_COMMON);
@@ -144,6 +149,21 @@ void Styx::TerrainRenderer::Render(D3D12Lite::GraphicsContext* gfx, D3D12Lite::C
 		gfx->AddBarrier(*m_HeightfieldTexture.get(), D3D12_RESOURCE_STATE_COMMON);
 		gfx->FlushBarriers();
 	}
+}
+
+void Styx::TerrainRenderer::RenderUI()
+{
+	ImGui::Begin("Heightfield Noise");
+	{
+		{
+			ImGui::InputInt("Seed", &m_MaterialConstants.seed);
+			ImGui::InputFloat("Frequency", &m_MaterialConstants.frequency);
+			ImGui::InputInt("Octaves", &m_MaterialConstants.octaves);
+			ImGui::InputFloat("Lacunarity", &m_MaterialConstants.lacunarity);
+			ImGui::InputFloat("Gain", &m_MaterialConstants.gain);
+		}
+	}
+	ImGui::End();
 }
 
 void Styx::TerrainRenderer::LoadResources()
@@ -271,13 +291,28 @@ void Styx::TerrainRenderer::InitializePSOs()
 		m_HeightfieldNoiseObjectConstantBuffers[i] = m_Device->CreateBuffer(heightfieldNoiseObjectConstantBufferDesc);
 	}
 
+	D3D12Lite::BufferCreationDesc heightfieldNoiseMaterialConstantBufferDesc{};
+	heightfieldNoiseMaterialConstantBufferDesc.mSize = sizeof(HeightfieldNoiseMaterialConstants);
+	heightfieldNoiseMaterialConstantBufferDesc.mAccessFlags = D3D12Lite::BufferAccessFlags::hostWritable;
+	heightfieldNoiseMaterialConstantBufferDesc.mViewFlags = D3D12Lite::BufferViewFlags::cbv;
+	heightfieldNoiseMaterialConstantBufferDesc.mDebugName = L"TerrainRenderer::HeightfieldNoiseMaterialConstantBuffer";
+
+	for (uint32_t i = 0; i < D3D12Lite::NUM_FRAMES_IN_FLIGHT; i++)
+	{
+		m_HeightfieldNoiseMaterialConstantBuffers[i] = m_Device->CreateBuffer(heightfieldNoiseMaterialConstantBufferDesc);
+	}
+
 	D3D12Lite::ComputePipelineDesc cPsoDesc = { m_HeightfieldNoiseShader.get()};
 
 	D3D12Lite::PipelineResourceLayout computeResourceLayout;
 	computeResourceLayout.mSpaces[D3D12Lite::PER_OBJECT_SPACE] = &m_HeightfieldNoisePerObjectResourceSpace;
+	computeResourceLayout.mSpaces[D3D12Lite::PER_MATERIAL_SPACE] = &m_HeightfieldNoisePerMaterialResourceSpace;
 
 	m_HeightfieldNoisePerObjectResourceSpace.SetCBV(m_HeightfieldNoiseObjectConstantBuffers[0].get());
 	m_HeightfieldNoisePerObjectResourceSpace.Lock();
+
+	m_HeightfieldNoisePerMaterialResourceSpace.SetCBV(m_HeightfieldNoiseMaterialConstantBuffers[0].get());
+	m_HeightfieldNoisePerMaterialResourceSpace.Lock();
 
 	m_HeightfieldNoisePSO = m_Device->CreateComputePipeline(cPsoDesc, computeResourceLayout);
 }

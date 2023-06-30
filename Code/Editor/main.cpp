@@ -249,13 +249,14 @@ int main()
 					}
 				}
 				ImGui::End();
-
-				ImGui::Render();
 			}
 
 			D3D12Lite::TextureResource& backBuffer = device->GetCurrentBackBuffer();
 
 			terrainRenderer.Render(graphicsContext.get(), computeContext.get(), g_freeFlyCamera, &backBuffer, g_depthBuffer.get());
+			terrainRenderer.RenderUI();
+
+			ImGui::Render();
 
 			// ImGUI
 			{
